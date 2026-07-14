@@ -1,0 +1,5 @@
+node_modules/
+_apresentacao/
+.dev-autonomo-log.tsv
+.env
+*.log
