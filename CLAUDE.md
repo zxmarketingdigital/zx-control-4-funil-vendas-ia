@@ -1,10 +1,11 @@
-# 🚀 Comece aqui — Kit Lançador Low-Ticket (ZX Control 4)
+# 🚀 Comece aqui — Setup de Funil de Vendas com IA (Kit Lançador · ZX Control 4)
 
-Você acabou de clonar o **Kit Lançador**: um orquestrador no seu Claude Code que te conduz por
-todo o ciclo de **lançar um produto digital low-ticket white-label** — do zero à divulgação:
+Você acabou de clonar o **Setup de Funil de Vendas com IA**: um orquestrador no seu Claude Code que
+te conduz por todo o ciclo de **lançar um produto digital low-ticket white-label** — do zero à
+divulgação:
 
-**planejar produto → landing page → checkout Pagar.me → funil (order bump + upsell) → entrega
-(acesso ao seu mini-app) → divulgação em massa.**
+**planejar produto → criar o mini-app de IA do nicho → landing page → checkout Pagar.me → funil
+(order bump + upsell) → entrega (acesso ao seu mini-app) → divulgação em massa.**
 
 Você **não precisa saber programar** nem decorar comando nenhum. Quem escreve, monta e organiza
 é o Claude. Seu papel é **conduzir e aprovar**. É mais simples do que parece — me conduza que eu
@@ -21,7 +22,7 @@ te levo.
    mkdir -p ~/.claude/skills && cp -R skills/* ~/.claude/skills/
    ```
 
-   (Isso instala 7 skills: o orquestrador `kit-lancador` + as 6 etapas.)
+   (Isso instala 8 skills: o orquestrador `kit-lancador` + as 7 etapas.)
 
 2. **Crie a sua marca.** As skills leem a sua identidade de marca de
    `~/.operacao-ia/config/marca.json` (nome, nicho, persona, cores, CTA). Se você ainda não tem
@@ -39,16 +40,17 @@ te levo.
 
    > **`leia o CLAUDE.md e me conduza`**
 
-4. O Claude carrega o **menu do Kit Lançador** — as 6 etapas numeradas, mostrando o que já foi
-   feito e o que falta:
+4. O Claude carrega o **menu do Setup de Funil de Vendas com IA** — as 7 etapas numeradas,
+   mostrando o que já foi feito e o que falta:
 
    ```
    1. Planejar produto (oferta/blueprint)
-   2. Landing page
-   3. Checkout Pagar.me
-   4. Funil (order bump + upsell + copy)
-   5. Entrega (provisionar acesso ao seu mini-app)
-   6. Divulgação (email + posts + carrossel)
+   2. Agente Criador de Mini-Apps (constrói o app do seu nicho do zero)
+   3. Landing page
+   4. Checkout Pagar.me
+   5. Funil (order bump + upsell + copy)
+   6. Entrega (provisionar acesso ao seu mini-app)
+   7. Divulgação (email + posts + carrossel)
 
    S. Status   ·   C. Continuar de onde parei   ·   R. Refazer uma etapa
    ```
@@ -68,8 +70,9 @@ te levo.
 
 - Cada etapa é uma skill que **chama uma ferramenta já pronta e testada** da ZX LAB — você não
   reinventa nada.
-- As etapas têm **ordem**: a etapa 2 (LP) só libera depois da 1 (planejar); a 3 (checkout) só
-  depois da 2; e assim por diante. Isso te protege de sair montando checkout sem oferta definida.
+- As etapas têm **ordem**: a etapa 2 (criar o mini-app) só libera depois da 1 (planejar); a 3 (LP)
+  só depois da 2; e assim por diante. Isso te protege de montar a página de vendas sem o produto
+  pronto, ou o checkout sem oferta definida.
 - Todos os artefatos que você gerar (blueprint, LP, checkout, copy, email de boas-vindas, posts,
   carrossel) ficam salvos em `~/kit-lancador-artefatos/`, organizados por etapa.
 

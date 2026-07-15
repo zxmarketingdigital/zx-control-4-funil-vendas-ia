@@ -3,3 +3,5 @@ _apresentacao/
 .dev-autonomo-log.tsv
 .env
 *.log
+__pycache__/
+*.pyc

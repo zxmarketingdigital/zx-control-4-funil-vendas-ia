@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-estado.py — Estado persistido do Kit Lançador Low-Ticket (ZX Control 4, Setup 14).
+estado.py — Estado persistido do Setup de Funil de Vendas com IA (Kit Lançador, ZX Control 4, Setup 14).
 
 Helper standalone, SÓ stdlib. NÃO depende da infra Mission Control (setup_io.py é
 acoplado a ~/.zxlab-mission-control e não pode shipar em repo público). Este helper
-guarda o progresso do aluno pelas 6 etapas do lançamento num único JSON em
+guarda o progresso do aluno pelas 7 etapas do lançamento num único JSON em
 ~/.kit-lancador/estado.json, com escrita atômica.
 
 Fluxo fixo (ordem é lei — cada gate exige o anterior 'done'):
-    planejar → lp → checkout → funil → entrega → divulgar
+    planejar → criar-miniapp → lp → checkout → funil → entrega → divulgar
 
 CLI:
-    python3 estado.py status            # tabela dos 6 gates
+    python3 estado.py status            # tabela dos 7 gates
     python3 estado.py continuar         # imprime o próximo gate pendente
     python3 estado.py redo <gate>       # volta um gate pra 'pending'
     python3 estado.py abortar           # arquiva e zera o estado
@@ -34,9 +34,10 @@ STATE_DIR = HOME / ".kit-lancador"
 STATE_PATH = STATE_DIR / "estado.json"
 
 # Ordem de execução — cada gate só libera com o anterior 'done'.
-GATES = ["planejar", "lp", "checkout", "funil", "entrega", "divulgar"]
+GATES = ["planejar", "criar-miniapp", "lp", "checkout", "funil", "entrega", "divulgar"]
 LABELS = {
     "planejar": "Planejar produto (oferta/blueprint)",
+    "criar-miniapp": "Agente Criador de Mini-Apps",
     "lp": "Landing page",
     "checkout": "Checkout Pagar.me",
     "funil": "Funil (order bump + upsell + copy)",
@@ -53,7 +54,7 @@ def _now() -> str:
 def _empty_state() -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
-        "produto": "Setor Jurídico IA (demo)",
+        "produto": "(defina no planejamento)",
         "created_at": _now(),
         "updated_at": _now(),
         "gates": {g: {"status": "pending", "artifact": None} for g in GATES},
@@ -72,9 +73,19 @@ def read_state() -> dict:
             f"estado.json tem schema_version={data.get('schema_version')}, "
             f"esperado {SCHEMA_VERSION}. Rode `abortar` pra recomeçar."
         )
+    gates = data.setdefault("gates", {})
+    # Migração — inserção do gate 'criar-miniapp' (Etapa 2) num estado que não o tinha (fluxo
+    # antigo de 6 gates). Os gates a jusante (lp..divulgar) que estavam 'done' foram concluídos
+    # ANTES do mini-app existir, então a invariante de ordenação está quebrada e a LP/entrega
+    # não consumiram o manifesto do app. Resetá-los pra 'pending' preserva a ordem e força o
+    # refazimento consumindo o mini-app novo; 'planejar' (a montante) permanece intacto.
+    if "criar-miniapp" not in gates:
+        for g in GATES[GATES.index("criar-miniapp"):]:
+            if g in gates:
+                gates[g] = {"status": "pending", "artifact": None}
     # Garante que todos os gates existem (tolerante a schema estendido).
     for g in GATES:
-        data.setdefault("gates", {}).setdefault(g, {"status": "pending", "artifact": None})
+        gates.setdefault(g, {"status": "pending", "artifact": None})
     return data
 
 
@@ -129,7 +140,7 @@ def set_status(gate: str, status: str, artifact: str | None = None) -> dict:
 def cmd_status(_args: list[str]) -> int:
     state = read_state()
     gates = state["gates"]
-    print(f"Kit Lançador — {state.get('produto', '?')}")
+    print(f"Setup de Funil de Vendas com IA — {state.get('produto', '?')}")
     print(f"Estado: {STATE_PATH}\n")
     for i, g in enumerate(GATES, 1):
         st = gates[g]["status"]
@@ -139,7 +150,7 @@ def cmd_status(_args: list[str]) -> int:
             line += f"\n        └─ artefato: {art}"
         print(line)
     nxt = next_pending()
-    print("\n" + ("🎉 Todos os 6 gates concluídos." if nxt is None
+    print("\n" + ("🎉 Todos os 7 gates concluídos." if nxt is None
                   else f"→ Próximo gate: {nxt} ({LABELS[nxt]})"))
     return 0
 
@@ -187,7 +198,7 @@ def cmd_done(args: list[str]) -> int:
     # Não confia no caller (cmd_start): valida aqui antes de marcar 'done'.
     # Aceita concluir só se o gate já está 'in-progress' OU se pode avançar
     # (todos os anteriores 'done'). Como um gate só chega a 'in-progress' via
-    # cmd_start — que exige can_advance — a invariante de ordenação dos 6 gates
+    # cmd_start — que exige can_advance — a invariante de ordenação dos 7 gates
     # é preservada mesmo que o caller pule o 'start' ou marque 'done' fora de hora.
     status = read_state()["gates"][gate]["status"]
     ok, reason = can_advance(gate)

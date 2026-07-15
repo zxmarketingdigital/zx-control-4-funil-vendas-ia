@@ -1,11 +1,11 @@
 ---
 name: checkout-white-label
-description: "Etapa 3 do Kit Lançador. Wrapper fino que monta o checkout Pagar.me do produto low-ticket white-label do aluno (produto principal + order bump nativo), invocando a skill-fonte /criar-checkout-pagarme. Na demo roda como STUB (sem chave/deploy) — as credenciais Pagar.me são plugadas depois via env local do aluno. Marca o gate 'checkout' como done. Bloqueia se o gate 'lp' não estiver concluído. Use quando o aluno escolher a etapa 3 no menu do /kit-lancador, ou disser: montar meu checkout, checkout pagar.me, adicionar order bump, etapa 3 do lançador."
+description: "Etapa 4 do Kit Lançador. Wrapper fino que monta o checkout Pagar.me do produto low-ticket white-label do aluno (produto principal + order bump nativo), invocando a skill-fonte /criar-checkout-pagarme. Na demo roda como STUB (sem chave/deploy) — as credenciais Pagar.me são plugadas depois via env local do aluno. Marca o gate 'checkout' como done. Bloqueia se o gate 'lp' não estiver concluído. Use quando o aluno escolher a etapa 4 no menu do /kit-lancador, ou disser: montar meu checkout, checkout pagar.me, adicionar order bump, etapa 4 do lançador."
 model: sonnet
 effort: medium
 ---
 
-# /checkout-white-label — Etapa 3 (gate `checkout`)
+# /checkout-white-label — Etapa 4 (gate `checkout`)
 
 Casca fina sobre **`/criar-checkout-pagarme`**. Monta a tela de checkout transparente
 (produto principal + order bump como funcionalidade extra). Zero lógica de pagamento aqui.
@@ -27,7 +27,7 @@ fazer deploy. Comunicar ao aluno:
 
 **O valor exibido no preview vem do blueprint resolvido (etapa 1), nunca de constante.** Carregar
 o blueprint ANTES de montar o preview e exibir `preco_principal` (pagamento único) + o order bump
-como valor separado — assim o STUB funciona pra qualquer aluno, não só pro demo R$97. Se o
+como valor separado — assim o STUB funciona pra qualquer aluno e qualquer preço. Se o
 blueprint não trouxer preço, cair no default da marca (`marca.preco_principal`); só então, na
 ausência de tudo, usar um placeholder explícito marcado como exemplo.
 
@@ -48,7 +48,7 @@ ausência de tudo, usar um placeholder explícito marcado como exemplo.
    ```bash
    python3 ~/.claude/skills/kit-lancador/estado.py done checkout ~/kit-lancador-artefatos/checkout/checkout-preview.html
    ```
-5. Voltar ao menu e sugerir a etapa 4 (funil).
+5. Voltar ao menu e sugerir a etapa 5 (funil).
 
 ## Fora de escopo aqui
 

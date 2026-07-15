@@ -46,7 +46,7 @@ python3 ~/.claude/skills/kit-lancador/estado.py start planejar
    python3 ~/.claude/skills/kit-lancador/estado.py done planejar ~/kit-lancador-artefatos/planejar/blueprint-oferta.md
    ```
 
-5. Voltar ao menu do `/kit-lancador` e sugerir a etapa 2 (LP), que agora está liberada.
+5. Voltar ao menu do `/kit-lancador` e sugerir a etapa 2 (criar o mini-app), que agora está liberada.
 
 ## Régua
 

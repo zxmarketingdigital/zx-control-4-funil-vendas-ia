@@ -1,11 +1,11 @@
 ---
 name: funil-lowticket
-description: "Etapa 4 do Kit Lançador. Wrapper fino que monta o funil de conversão do produto low-ticket white-label do aluno — order bump, upsell OTO e recuperação de compra — invocando as skills-fonte /configurar-upsell-produto (estrutura da oferta de upsell) e /copy-funil-low-ticket (copy que converte: email + WhatsApp, refund-safe). Entrega a copy do funil e marca o gate 'funil' como done. Bloqueia se o gate 'checkout' não estiver concluído. Use quando o aluno escolher a etapa 4 no menu do /kit-lancador, ou disser: montar o funil, configurar upsell, copy do order bump, etapa 4 do lançador."
+description: "Etapa 5 do Kit Lançador. Wrapper fino que monta o funil de conversão do produto low-ticket white-label do aluno — order bump, upsell OTO e recuperação de compra — invocando as skills-fonte /configurar-upsell-produto (estrutura da oferta de upsell) e /copy-funil-low-ticket (copy que converte: email + WhatsApp, refund-safe). Entrega a copy do funil e marca o gate 'funil' como done. Bloqueia se o gate 'checkout' não estiver concluído. Use quando o aluno escolher a etapa 5 no menu do /kit-lancador, ou disser: montar o funil, configurar upsell, copy do order bump, etapa 5 do lançador."
 model: sonnet
 effort: high
 ---
 
-# /funil-lowticket — Etapa 4 (gate `funil`)
+# /funil-lowticket — Etapa 5 (gate `funil`)
 
 Casca fina sobre **duas** fontes: `/configurar-upsell-produto` (planeja/estrutura o upsell) e
 `/copy-funil-low-ticket` (Bloco B — copy de upsell multicanal + recuperação, refund-safe).
@@ -39,7 +39,7 @@ python3 ~/.claude/skills/kit-lancador/estado.py start funil
    ```bash
    python3 ~/.claude/skills/kit-lancador/estado.py done funil ~/kit-lancador-artefatos/funil/copy-funil.md
    ```
-6. Voltar ao menu e sugerir a etapa 5 (entrega).
+6. Voltar ao menu e sugerir a etapa 6 (entrega).
 
 ## Fora de escopo aqui
 
