@@ -68,8 +68,8 @@ te levo.
 
 ## Como funciona por dentro (pra você entender, não pra decorar)
 
-- Cada etapa é uma skill que **chama uma ferramenta já pronta e testada** da ZX LAB — você não
-  reinventa nada.
+- Cada etapa é uma skill **autossuficiente** — o método validado da ZX LAB já vem **embutido nela**
+  (você não instala mais nada além das 8 skills deste repo, e não reinventa nada).
 - As etapas têm **ordem**: a etapa 2 (criar o mini-app) só libera depois da 1 (planejar); a 3 (LP)
   só depois da 2; e assim por diante. Isso te protege de montar a página de vendas sem o produto
   pronto, ou o checkout sem oferta definida.

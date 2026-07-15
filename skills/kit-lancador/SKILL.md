@@ -8,18 +8,19 @@ effort: medium
 # /kit-lancador — Orquestrador do Setup de Funil de Vendas com IA
 
 Casca fina que **conduz o aluno** pelas 7 etapas de lançar um produto digital low-ticket
-(R$9–97) white-label, no Claude Code dele. Não reimplementa nada: cada etapa é um wrapper
-que invoca uma skill-fonte já validada. O valor desta skill é o **fluxo guiado + estado + gates**.
+(R$9–97) white-label, no Claude Code dele. Cada etapa é autossuficiente: embute o método completo
+(copy, HTML, estrutura) — não invoca nenhuma skill externa. O valor desta skill é o **fluxo
+guiado + estado + gates**.
 
 **Esta skill NÃO escreve arquivo de produto diretamente.** Ela só:
 1. lê a marca do aluno e o estado do lançamento,
 2. mostra o menu,
-3. delega a etapa escolhida à skill wrapper correspondente,
+3. delega a etapa escolhida à skill da etapa correspondente,
 4. bloqueia o avanço se a etapa anterior não estiver `done`.
 
 ## As 7 etapas (ordem fixa — é lei)
 
-| # | Gate | Skill wrapper | O que produz |
+| # | Gate | Skill (etapa) | O que produz |
 |---|------|---------------|--------------|
 | 1 | `planejar` | `/planejar-produto-lowticket` | Blueprint da oferta (preço, benefit stack, order bump, upsell, garantia) |
 | 2 | `criar-miniapp` | `/criar-miniapp` | Mini-app de IA do nicho do zero (1 a 5 agentes) — painel + demo + apresentação + proposta |
@@ -86,7 +87,7 @@ Os ícones `[⏳/🔄/✅]` vêm do `estado.py status`. Preencher `<marca>` com 
 
 | Entrada | Ação |
 |---------|------|
-| `1`–`7` | Antes de delegar: `~/.claude/skills/kit-lancador/estado.py can <gate>`. Se **bloqueado**, avisar qual etapa falta e voltar ao menu. Se ok → `~/.claude/skills/kit-lancador/estado.py start <gate>` → **invocar a skill wrapper** da etapa → ao concluir, o wrapper roda `~/.claude/skills/kit-lancador/estado.py done <gate> <artefato>`. |
+| `1`–`7` | Antes de delegar: `~/.claude/skills/kit-lancador/estado.py can <gate>`. Se **bloqueado**, avisar qual etapa falta e voltar ao menu. Se ok → `~/.claude/skills/kit-lancador/estado.py start <gate>` → **invocar a skill da etapa** → ao concluir, a etapa roda `~/.claude/skills/kit-lancador/estado.py done <gate> <artefato>`. |
 | `S` | `~/.claude/skills/kit-lancador/estado.py status` |
 | `C` | `~/.claude/skills/kit-lancador/estado.py continuar` → pega o próximo gate pendente e roteia como se fosse o número dele (respeitando o gate). |
 | `R` | perguntar qual etapa refazer → `~/.claude/skills/kit-lancador/estado.py redo <gate>` (isso re-bloqueia as etapas seguintes até refazer). |
@@ -96,7 +97,7 @@ principal motivo desta orquestradora existir — evita LP sem oferta, checkout s
 
 ### Passo 3 — depois de cada etapa
 
-- Confirmar que o wrapper marcou `done` (rodar `status` de novo).
+- Confirmar que a etapa marcou `done` (rodar `status` de novo).
 - Mostrar o menu atualizado e sugerir a próxima etapa (`continuar`).
 - Quando os 7 gates estiverem `done` → parabenizar e listar todos os artefatos
   (`~/.claude/skills/kit-lancador/estado.py status` mostra o caminho de cada um).
@@ -106,7 +107,7 @@ principal motivo desta orquestradora existir — evita LP sem oferta, checkout s
 - Não plugar conta Pagar.me, domínio ou Pixel reais aqui — isso é config por env local do
   aluno (`~/.operacao-ia/config/`), comunicada como "nas próximas aulas você pluga suas
   credenciais". A demo/gate roda com stub.
-- Não disparar email/WhatsApp de verdade sem o aluno confirmar (as skills-fonte já rodam
-  dry-run por padrão).
-- Não copiar lógica das skills-fonte pra cá. Se precisar mudar como uma etapa funciona,
-  mexe na skill-fonte, não no wrapper.
+- Não disparar email/WhatsApp de verdade sem o aluno confirmar (as etapas rodam dry-run por
+  padrão).
+- Se precisar mudar como uma etapa funciona, edite o `SKILL.md` da própria etapa (o método mora
+  nela).

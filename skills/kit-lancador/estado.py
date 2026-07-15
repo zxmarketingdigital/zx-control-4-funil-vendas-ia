@@ -2,8 +2,8 @@
 """
 estado.py — Estado persistido do Setup de Funil de Vendas com IA (Kit Lançador, ZX Control 4, Setup 14).
 
-Helper standalone, SÓ stdlib. NÃO depende da infra Mission Control (setup_io.py é
-acoplado a ~/.zxlab-mission-control e não pode shipar em repo público). Este helper
+Helper standalone, só stdlib — não depende de nenhuma infraestrutura privada do instrutor, para
+poder shipar num repositório público. Este helper
 guarda o progresso do aluno pelas 7 etapas do lançamento num único JSON em
 ~/.kit-lancador/estado.json, com escrita atômica.
 
