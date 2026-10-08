@@ -46,7 +46,7 @@ cat ~/kit-lancador-artefatos/miniapp/manifest.json 2>/dev/null   # se já existi
   `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar **e imprime o aviso**) e repetir o aviso ao aluno.
   Logo ainda não perguntado (`python3 ~/.claude/skills/kit-lancador/marca.py check` → `"logo": "nao_perguntado"`): perguntar uma vez e
   gravar com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Usar `acento`, `texto_sobre_acento`,
-  `primaria`, `fundo` e `logo.html_src` do JSON do `resolve`.
+  `primaria`, `fundo` e `logo.html_src` do JSON do `resolve` (logo local: `logo.copiar_para_pasta` = `true` → copiar `logo.src` para a pasta do checkout e usar `html_src`, o nome do arquivo; logo https: link direto).
 - **Resolver o preço ANTES de montar o preview:**
   1. Localizar no blueprint a seção de **preço de entrada** e a seção **Order bump** — são texto
      livre tipo `"R$97 (pagamento único, acesso vitalício)"`; extrair o valor numérico (`97.00`)

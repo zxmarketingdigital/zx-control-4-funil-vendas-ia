@@ -84,10 +84,12 @@ class MarcaTest(unittest.TestCase):
         png.write_bytes(PNG_1x1)
         r = self.run_marca("set", "--nome", "X", "--acento", "#0055AA", "--logo", str(png))
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertTrue((self.cfg / "marca-logo.png").is_file())
+        self.assertEqual(len(list(self.cfg.glob("marca-logo-*.png"))), 1)
         res = json.loads(self.run_marca("resolve").stdout)
         self.assertEqual(res["logo"]["tipo"], "arquivo")
-        self.assertTrue(res["logo"]["html_src"].startswith("data:image/png;base64,"))
+        self.assertTrue(res["logo"]["copiar_para_pasta"])
+        self.assertTrue(res["logo"]["html_src"].startswith("marca-logo-"))
+        self.assertTrue(res["logo"]["data_uri"].startswith("data:image/png;base64,"))
 
     def test_logo_extensao_invalida_e_url_http_rejeitadas(self):
         txt = Path(self.tmp.name) / "a.txt"
@@ -108,9 +110,10 @@ class MarcaTest(unittest.TestCase):
         self.cfg.mkdir(parents=True)
         alvo = Path(self.tmp.name) / "alvo.png"
         alvo.write_bytes(PNG_1x1)
-        (self.cfg / "marca-logo.png").symlink_to(alvo)
         novo = Path(self.tmp.name) / "novo.png"
         novo.write_bytes(PNG_1x1 + b"x")
+        import hashlib
+        (self.cfg / f"marca-logo-{hashlib.sha256(novo.read_bytes()).hexdigest()[:8]}.png").symlink_to(alvo)
         r = self.run_marca("set", "--nome", "X", "--logo", str(novo))
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(alvo.read_bytes(), PNG_1x1)  # alvo do link não foi sobrescrito
@@ -123,13 +126,13 @@ class MarcaTest(unittest.TestCase):
         txt = Path(self.tmp.name) / "b.txt"
         txt.write_text("x")
         self.assertNotEqual(self.run_marca("set", "--logo", str(txt)).returncode, 0)
-        self.assertTrue((self.cfg / "marca-logo.png").is_file())
+        self.assertEqual(len(list(self.cfg.glob("marca-logo-*.png"))), 1)
         # troca por jpg: png antigo some só depois da cópia nova
         j = Path(self.tmp.name) / "c.jpg"
         j.write_bytes(b"\xff\xd8\xff")
         self.assertEqual(self.run_marca("set", "--logo", str(j)).returncode, 0)
-        self.assertTrue((self.cfg / "marca-logo.jpg").is_file())
-        self.assertFalse((self.cfg / "marca-logo.png").exists())
+        self.assertEqual(len(list(self.cfg.glob("marca-logo-*.jpg"))), 1)
+        self.assertEqual(list(self.cfg.glob("marca-logo-*.png")), [])
         self.assertEqual(list(self.cfg.glob("*.tmp")), [])
 
     def test_chaves_do_contrato_cor_primaria_e_secundaria_sao_aceitas(self):
@@ -174,7 +177,7 @@ class MarcaTest(unittest.TestCase):
         j = Path(self.tmp.name) / "c.jpg"
         j.write_bytes(b"\xff\xd8\xff")
         self.assertNotEqual(self.run_marca("set", "--logo", str(j)).returncode, 0)
-        self.assertTrue((self.cfg / "marca-logo.png").is_file())
+        self.assertEqual(len(list(self.cfg.glob("marca-logo-*.png"))), 1)
 
     def test_json_corrompido_nao_e_sobrescrito(self):
         self.cfg.mkdir(parents=True)

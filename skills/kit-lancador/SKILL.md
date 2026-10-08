@@ -53,7 +53,7 @@ python3 ~/.claude/skills/kit-lancador/estado.py abortar      # arquiva e zera o 
 
 ```bash
 # Marca do aluno (white-label). Se não existir, orienta a criar antes de seguir.
-cat ~/.operacao-ia/config/marca.json 2>/dev/null || echo "SEM_MARCA"
+python3 ~/.claude/skills/kit-lancador/marca.py check || echo "SEM_MARCA"   # respeita OPERACAO_IA_CONFIG_DIR
 # Estado do lançamento
 python3 ~/.claude/skills/kit-lancador/estado.py status
 ```

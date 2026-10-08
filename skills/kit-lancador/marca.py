@@ -32,6 +32,7 @@ CLI:
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import mimetypes
 import os
@@ -137,7 +138,9 @@ def _copiar_logo(origem: str) -> str:
         raise SystemExit(f"ERRO: logo precisa ser png, jpg, svg ou webp (veio '{ext or 'sem extensão'}').")
     if src.stat().st_size > LOGO_MAX_BYTES:
         raise SystemExit("ERRO: logo maior que 2 MB. Use uma versão menor.")
-    destino = config_dir() / f"marca-logo{ext}"
+    # nome com hash do conteúdo: trocar de logo nunca sobrescreve o arquivo que o marca.json atual referencia
+    h = hashlib.sha256(src.read_bytes()).hexdigest()[:8]
+    destino = config_dir() / f"marca-logo-{h}{ext}"
     destino.parent.mkdir(parents=True, exist_ok=True)
     if destino.is_symlink():
         raise SystemExit(f"ERRO: {destino} é um link simbólico; remova-o e tente de novo.")
@@ -157,10 +160,10 @@ def _copiar_logo(origem: str) -> str:
 
 
 def _limpar_logos_orfaos(m: dict) -> None:
-    """Depois que o marca.json novo foi gravado: remove marca-logo.* que ele não referencia mais."""
+    """Depois que o marca.json novo foi gravado: remove marca-logo* que ele não referencia mais."""
     atual = m.get("logo")
     atual_nome = Path(str(atual)).name if atual and not str(atual).lower().startswith("https://") else None
-    for velho in config_dir().glob("marca-logo.*"):
+    for velho in config_dir().glob("marca-logo*"):
         if velho.name != atual_nome and not velho.name.endswith(".tmp") and not velho.is_dir():
             velho.unlink()
 
@@ -244,9 +247,9 @@ def cmd_set(args: list[str]) -> int:
 def _logo_info(m: dict) -> dict:
     logo = m.get("logo")
     if not logo:
-        return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False}
+        return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False, "data_uri": None}
     if str(logo).lower().startswith("https://"):
-        return {"tipo": "url", "src": logo, "html_src": logo, "copiar_para_pasta": False}
+        return {"tipo": "url", "src": logo, "html_src": logo, "copiar_para_pasta": False, "data_uri": None}
     p = Path(str(logo)).expanduser()
     try:
         dentro = p.resolve().parent == config_dir().resolve()
@@ -260,11 +263,11 @@ def _logo_info(m: dict) -> dict:
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
                 "aviso": f"logo configurado não existe mais: {p}"}
     tam = p.stat().st_size
-    if tam <= LOGO_DATA_URI_MAX:
+    info = {"tipo": "arquivo", "src": str(p), "html_src": p.name, "copiar_para_pasta": True, "data_uri": None}
+    if tam <= LOGO_DATA_URI_MAX:   # alternativa p/ HTML de arquivo único; as etapas preferem copiar o arquivo
         mime = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
-        b64 = base64.b64encode(p.read_bytes()).decode("ascii")
-        return {"tipo": "arquivo", "src": str(p), "html_src": f"data:{mime};base64,{b64}", "copiar_para_pasta": False}
-    return {"tipo": "arquivo", "src": str(p), "html_src": p.name, "copiar_para_pasta": True}
+        info["data_uri"] = f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode('ascii')}"
+    return info
 
 
 def cmd_resolve(_args: list[str]) -> int:

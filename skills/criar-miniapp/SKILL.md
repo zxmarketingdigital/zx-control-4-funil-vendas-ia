@@ -135,8 +135,8 @@ RLS + painel Pages + Gemini como cérebro trocável):
     `painel/style.css` e das páginas de `docs/`; todo botão, destaque e preço lê `var(--brand)`.
     Nenhum hex fixo da marca nas regras de CSS.
   - **Logo:** `<img src="<resolve.logo.html_src>" alt="<nome da marca>">` no topo do painel e de
-    cada página de `docs/` (se `logo.copiar_para_pasta` for `true`, copiar o arquivo para a
-    pasta e usar o nome dele). Sem logo, o **nome da marca em texto**. Nunca "ZX LAB" no lugar
+    cada página de `docs/` (logo local: `logo.copiar_para_pasta` é `true` → copiar `logo.src` para a
+    pasta e usar `html_src`, o nome do arquivo; logo https: link direto). Sem logo, o **nome da marca em texto**. Nunca "ZX LAB" no lugar
     do nome do aluno nas telas que o cliente final vê.
 
 ## Passo 5 — Popular a demo e validar o "pronto" (DoD embutido)

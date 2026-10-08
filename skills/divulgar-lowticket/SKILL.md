@@ -80,9 +80,10 @@ mkdir -p ~/kit-lancador-artefatos/divulgar
 O `.html` é um template simples e responsivo (largura ~600px, fontes do sistema, cores do
 `resolve`, botão de CTA sólido — sem gradiente/glow), com o texto do `.md` já formatado. Botão:
 fundo `resolve.acento` e texto `resolve.texto_sobre_acento` (contraste legível mesmo com cor
-clara). Topo do email: logo do aluno (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
-height="40">`; para email, preferir o link https quando o aluno tiver um, pois vários clientes de
-email bloqueiam imagem `data:`) ou, sem logo, o nome da marca em texto.
+clara). Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
+height="40">`); logo local não funciona em email (clientes bloqueiam imagem `data:` e arquivo local) — nesse
+caso usar o nome da marca em texto e avisar o aluno que, para ter o logo no email, ele precisa hospedá-lo
+e gravar o link com `marca.py set --logo https://...`. Sem logo, o nome da marca em texto.
 
 ## Passo 3 — Copy de post social (legenda + hashtags + CTA)
 
@@ -151,11 +152,12 @@ Escrever e rodar um script assim (ajustar a lista `SLIDES` com os textos aprovad
 
 ```python
 #!/usr/bin/env python3
-import json, pathlib, textwrap
+import json, os, pathlib, textwrap
 from PIL import Image, ImageDraw, ImageFont
 
 HOME = pathlib.Path.home()
-marca = json.loads((HOME / ".operacao-ia/config/marca.json").read_text())
+CFG = pathlib.Path(os.environ.get("OPERACAO_IA_CONFIG_DIR") or HOME / ".operacao-ia/config").expanduser()
+marca = json.loads((CFG / "marca.json").read_text())
 cores = dict(marca.get("cores") or {})
 cores.setdefault("acento", marca.get("cor_primaria"))  # aceita também as chaves do contrato (cor_primaria)
 NOME = str(marca.get("marca") or marca.get("nome") or "").strip()
@@ -201,7 +203,11 @@ def carregar_logo(altura=90):
             with urllib.request.urlopen(logo, timeout=10) as r:
                 im = Image.open(io.BytesIO(r.read(2_000_000)))
         else:
-            im = Image.open(pathlib.Path(logo).expanduser())
+            lp = pathlib.Path(logo).expanduser()
+            # só aceita imagem dentro da pasta de config (nada de ler arquivo arbitrário nem symlink)
+            if lp.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp") or lp.is_symlink() or lp.resolve().parent != CFG.resolve():
+                raise ValueError("logo local fora da pasta de config ou formato não aceito")
+            im = Image.open(lp)
         im = im.convert("RGBA")
         return im.resize((max(1, int(im.width * altura / im.height)), altura))
     except Exception as e:
