@@ -31,7 +31,7 @@ Mini-Apps**) precisam terminar primeiro e voltar ao menu.
 A LP **não inventa nada** — copy, preço e features vêm sempre das etapas anteriores:
 
 ```bash
-cat ~/.operacao-ia/config/marca.json
+cat "$(python3 ~/.claude/skills/kit-lancador/marca.py path)"   # respeita OPERACAO_IA_CONFIG_DIR
 cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -c 'import json,sys;print(json.load(sys.stdin).get("artifact",""))')"
 cat ~/kit-lancador-artefatos/miniapp/manifest.json
 ```

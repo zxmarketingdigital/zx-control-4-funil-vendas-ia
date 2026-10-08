@@ -30,7 +30,7 @@ python3 ~/.claude/skills/kit-lancador/estado.py start planejar
 ## Passo 1 — Carregar a marca do aluno (ask-vs-crash)
 
 ```bash
-cat ~/.operacao-ia/config/marca.json
+cat "$(python3 ~/.claude/skills/kit-lancador/marca.py path)"   # respeita OPERACAO_IA_CONFIG_DIR
 ```
 
 Usar `marca`, `nicho`, `persona`, `produto`, `preco_principal`, `order_bump`, `upsell`, `tom`,
@@ -38,7 +38,7 @@ Usar `marca`, `nicho`, `persona`, `produto`, `preco_principal`, `order_bump`, `u
 
 **Se o arquivo não existir, NÃO travar/crashar.** Parar aqui e orientar o aluno: "Você ainda não
 tem uma marca configurada — me diga o nome do seu produto/marca, o nicho, a persona do cliente
-final e o tom de voz que eu monto o `~/.operacao-ia/config/marca.json` com você." Só seguir depois
+final e o tom de voz que eu monto o `marca.json` com você (fica em `~/.operacao-ia/config/`, ou na pasta que `marca.py path` indicar)." Só seguir depois
 que o arquivo existir (mesmo que mínimo).
 
 ### Passo 1b — Identidade visual da marca (nome, cor, logo) — perguntar SEMPRE, nunca assumir
@@ -75,7 +75,7 @@ JSON
 
 **Se o aluno não quiser informar a cor agora:** não inventar uma. Rodar
 `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` — o helper grava o âmbar padrão **e imprime o aviso**
-("Usando a cor padrão ZX (âmbar). Troque depois em ~/.operacao-ia/config/marca.json"). Repetir esse
+("Usando a cor padrão ZX (âmbar). Troque depois em <caminho impresso pelo helper>"). Repetir esse
 aviso ao aluno com as próprias palavras, deixando claro que é só um valor provisório.
 
 Mapa dos campos: `marca` = nome · `cores.acento` = **cor da marca** (botões, preço, destaques) ·

@@ -407,6 +407,12 @@ def cmd_resolve(_args: list[str]) -> int:
     return 0
 
 
+def cmd_path(_args: list[str]) -> int:
+    """Imprime o caminho do marca.json (respeita OPERACAO_IA_CONFIG_DIR). Não exige que o arquivo exista."""
+    print(marca_path())
+    return 0
+
+
 def cmd_texto_sobre(args: list[str]) -> int:
     h = normalizar_hex(args[0]) if args else None
     if not h:
@@ -416,7 +422,8 @@ def cmd_texto_sobre(args: list[str]) -> int:
 
 
 def main(argv: list[str]) -> int:
-    cmds = {"check": cmd_check, "set": cmd_set, "resolve": cmd_resolve, "texto-sobre": cmd_texto_sobre}
+    cmds = {"check": cmd_check, "set": cmd_set, "resolve": cmd_resolve, "texto-sobre": cmd_texto_sobre,
+            "path": cmd_path}
     cmd = argv[0] if argv else "check"
     fn = cmds.get(cmd)
     if not fn:

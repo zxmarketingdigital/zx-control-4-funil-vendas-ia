@@ -34,7 +34,7 @@ preço e no fluxo de pagamento já definidos) e voltar ao menu.
 ## Passo 1 — Carregar o contexto (marca + blueprint)
 
 ```bash
-cat ~/.operacao-ia/config/marca.json
+cat "$(python3 ~/.claude/skills/kit-lancador/marca.py path)"   # respeita OPERACAO_IA_CONFIG_DIR
 cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -c 'import json,sys;print(json.load(sys.stdin).get("artifact",""))')"
 ```
 Puxar de lá: `marca`, `nicho`, `persona`, `produto`, a seção de **preço de entrada**, a seção

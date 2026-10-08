@@ -34,7 +34,7 @@ construído em cima do blueprint da oferta) e voltar ao menu.
 
 ## Passo 1 — Perguntar o produto ao aluno (AskUserQuestion) — nada hardcoded
 
-Reaproveitar o que a Etapa 1 já definiu (`~/.operacao-ia/config/marca.json` + o blueprint em
+Reaproveitar o que a Etapa 1 já definiu (`marca.json` — o caminho vem de `python3 ~/.claude/skills/kit-lancador/marca.py path`, padrão `~/.operacao-ia/config/marca.json` — + o blueprint em
 `~/kit-lancador-artefatos/planejar/blueprint-oferta.md`). Confirmar / preencher com o aluno:
 
 - **Nicho e persona do cliente final** (ex.: "advogado solo", "clínica de estética", "corretor").

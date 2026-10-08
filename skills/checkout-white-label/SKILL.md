@@ -29,7 +29,7 @@ anuncia o mesmo produto que a LP já vendeu) e voltar ao menu.
 ## Passo 1 — Carregar marca + blueprint (nada hardcoded)
 
 ```bash
-cat ~/.operacao-ia/config/marca.json
+cat "$(python3 ~/.claude/skills/kit-lancador/marca.py path)"   # respeita OPERACAO_IA_CONFIG_DIR
 cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -c 'import json,sys;print(json.load(sys.stdin).get("artifact",""))')"
 cat ~/kit-lancador-artefatos/miniapp/manifest.json 2>/dev/null   # se já existir, dá o nome/slug exato do produto
 ```

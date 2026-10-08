@@ -31,7 +31,7 @@ que o cliente ainda não recebe é vender fumaça — e voltar ao menu.
 ## Passo 1 — Carregar contexto (nada hardcoded)
 
 ```bash
-cat "${OPERACAO_IA_CONFIG_DIR:-$HOME/.operacao-ia/config}/marca.json"   # nome, nicho, persona, tom, cores, cta
+cat "$(python3 ~/.claude/skills/kit-lancador/marca.py path)"   # nome, nicho, persona, tom, cores, cta
 cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -c 'import json,sys;print(json.load(sys.stdin).get("artifact",""))')" # oferta, preço, order bump, upsell, garantia
 cat ~/kit-lancador-artefatos/miniapp/manifest.json                 # produto real: agentes, entidades, preço
 ```
@@ -152,12 +152,13 @@ Escrever e rodar um script assim (ajustar a lista `SLIDES` com os textos aprovad
 
 ```python
 #!/usr/bin/env python3
-import json, os, pathlib, textwrap
+import json, pathlib, subprocess, sys, textwrap
 from PIL import Image, ImageDraw, ImageFont
 
 HOME = pathlib.Path.home()
-CFG = pathlib.Path(os.environ.get("OPERACAO_IA_CONFIG_DIR") or HOME / ".operacao-ia/config").expanduser()
-marca = json.loads((CFG / "marca.json").read_text())
+MARCA_JSON = pathlib.Path(subprocess.check_output([sys.executable, str(HOME / ".claude/skills/kit-lancador/marca.py"), "path"], text=True).strip())
+CFG = MARCA_JSON.parent   # pasta de config (a logo local só vale se estiver aqui)
+marca = json.loads(MARCA_JSON.read_text())
 cores = dict(marca.get("cores") or {})
 cores["acento"] = cores.get("acento") or marca.get("cor_primaria")  # aceita também a chave do contrato (cor_primaria)
 NOME = str(marca.get("marca") or marca.get("nome") or "").strip()
@@ -165,7 +166,7 @@ if not NOME or not cores.get("acento"):
     raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --json - (ou set --usar-padrao-zx)")
 if marca.get("cor_padrao_zx"):
     print("AVISO: usando a cor padrão ZX (âmbar) porque a cor da marca não foi informada. "
-          "Troque em ~/.operacao-ia/config/marca.json (cores.acento).")
+          "Troque em " + str(MARCA_JSON) + " (cores.acento).")
 
 def hx(h):
     h = h.lstrip("#")

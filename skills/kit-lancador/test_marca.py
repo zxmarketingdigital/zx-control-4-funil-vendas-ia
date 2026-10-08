@@ -30,6 +30,15 @@ class MarcaTest(unittest.TestCase):
     def marca_json(self):
         return json.loads((self.cfg / "marca.json").read_text())
 
+    def test_path_respeita_env_e_nao_exige_arquivo(self):
+        r = self.run_marca("path")
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout.strip(), str(self.cfg / "marca.json"))
+        self.assertFalse(self.cfg.exists())
+        env = {k: v for k, v in os.environ.items() if k != "OPERACAO_IA_CONFIG_DIR"}
+        r = subprocess.run([sys.executable, str(MARCA), "path"], capture_output=True, text=True, env=env)
+        self.assertEqual(r.stdout.strip(), str(Path.home() / ".operacao-ia" / "config" / "marca.json"))
+
     def test_check_sem_arquivo_falha_e_lista(self):
         r = self.run_marca("check")
         self.assertEqual(r.returncode, 1)
