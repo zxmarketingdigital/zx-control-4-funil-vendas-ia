@@ -159,7 +159,7 @@ HOME = pathlib.Path.home()
 CFG = pathlib.Path(os.environ.get("OPERACAO_IA_CONFIG_DIR") or HOME / ".operacao-ia/config").expanduser()
 marca = json.loads((CFG / "marca.json").read_text())
 cores = dict(marca.get("cores") or {})
-cores.setdefault("acento", marca.get("cor_primaria"))  # aceita também as chaves do contrato (cor_primaria)
+cores["acento"] = cores.get("acento") or marca.get("cor_primaria")  # aceita também a chave do contrato (cor_primaria)
 NOME = str(marca.get("marca") or marca.get("nome") or "").strip()
 if not NOME or not cores.get("acento"):
     raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --json - (ou set --usar-padrao-zx)")
@@ -206,7 +206,7 @@ def carregar_logo(altura=90):
         else:
             lp = pathlib.Path(logo).expanduser()
             # só aceita imagem dentro da pasta de config (nada de ler arquivo arbitrário nem symlink)
-            if lp.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp") or lp.is_symlink() or lp.resolve().parent != CFG.resolve():
+            if lp.suffix.lower() not in (".png", ".jpg", ".jpeg", ".gif", ".webp") or lp.is_symlink() or lp.resolve().parent != CFG.resolve():
                 raise ValueError("logo local fora da pasta de config ou formato não aceito")
             im = Image.open(lp)
             if im.width * im.height > 4_000_000:

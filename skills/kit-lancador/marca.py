@@ -267,6 +267,11 @@ def _args_de_json(args: list[str]) -> list[str]:
         raise SystemExit(f"ERRO: JSON inválido no stdin ({e}).")
     if not isinstance(dados, dict):
         raise SystemExit("ERRO: o JSON do stdin deve ser um objeto.")
+    # aliases do contrato (SPEC): cor_primaria = acento, cor_secundaria = secundaria; o nome canônico vence se vierem os dois
+    for alias, canon in (("cor_primaria", "acento"), ("cor_secundaria", "secundaria")):
+        if alias in dados:
+            dados.setdefault(canon, dados[alias])
+            del dados[alias]
     extras = []
     for k in ("nome", "acento", "primaria", "secundaria", "fundo", "logo"):
         if k in dados and dados[k] is not None:
@@ -331,6 +336,10 @@ def _logo_info(m: dict) -> dict:
     if not logo:
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False, "data_uri": None}
     if str(logo).lower().startswith("https://"):
+        u = urlsplit(str(logo))
+        if not u.hostname or u.username or u.password or u.query or u.fragment:   # mesma regra do `set`, para JSON editado à mão
+            return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False, "data_uri": None,
+                    "aviso": "logo https ignorado: a URL não pode ter usuário, senha, parâmetros nem #."}
         return {"tipo": "url", "src": logo, "html_src": logo, "copiar_para_pasta": False, "data_uri": None}
     p = Path(str(logo)).expanduser()
     try:

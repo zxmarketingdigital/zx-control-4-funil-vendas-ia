@@ -232,6 +232,17 @@ class MarcaTest(unittest.TestCase):
         bad = subprocess.run([sys.executable, str(MARCA), "set", "--json", "-"], input='{"foo": 1}', capture_output=True, text=True, env=self.env)
         self.assertNotEqual(bad.returncode, 0)
 
+    def test_json_aceita_aliases_e_resolve_ignora_url_com_token(self):
+        r = subprocess.run([sys.executable, str(MARCA), "set", "--json", "-"], input=json.dumps({"nome": "X", "cor_primaria": "#05A", "cor_secundaria": "#FA0"}),
+                           capture_output=True, text=True, env=self.env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.marca_json()["cores"]["acento"], "#0055AA")
+        j = self.marca_json()
+        j["logo"] = "https://cdn.example/logo.png?token=abc"
+        (self.cfg / "marca.json").write_text(json.dumps(j))
+        info = json.loads(self.run_marca("resolve").stdout)["logo"]
+        self.assertIsNone(info["tipo"])
+
 
 if __name__ == "__main__":
     unittest.main()
