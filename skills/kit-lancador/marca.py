@@ -41,6 +41,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -122,9 +123,15 @@ def ler_marca() -> dict:
 def gravar_marca(dados: dict) -> None:
     p = marca_path()
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(dados, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    os.replace(tmp, p)
+    fd, tmp = tempfile.mkstemp(prefix=".marca-", suffix=".tmp", dir=str(p.parent))   # nome exclusivo: não segue symlink
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(dados, indent=2, ensure_ascii=False) + "\n")
+        os.replace(tmp, p)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 
 def _copiar_logo(origem: str) -> str:

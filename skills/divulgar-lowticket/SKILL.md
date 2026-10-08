@@ -31,7 +31,7 @@ que o cliente ainda não recebe é vender fumaça — e voltar ao menu.
 ## Passo 1 — Carregar contexto (nada hardcoded)
 
 ```bash
-cat ~/.operacao-ia/config/marca.json                              # nome, nicho, persona, tom, cores, cta
+cat "${OPERACAO_IA_CONFIG_DIR:-$HOME/.operacao-ia/config}/marca.json"   # nome, nicho, persona, tom, cores, cta
 cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -c 'import json,sys;print(json.load(sys.stdin).get("artifact",""))')" # oferta, preço, order bump, upsell, garantia
 cat ~/kit-lancador-artefatos/miniapp/manifest.json                 # produto real: agentes, entidades, preço
 ```
@@ -194,26 +194,15 @@ DESTAQUE = ACENTO if _contraste(ACENTO, FUNDO) >= 4.5 else TEXTO
 W, H = 1080, 1350
 
 def carregar_logo(altura=90):
-    """Logo do aluno (png/jpg/webp local ou https). SVG ou falha de leitura -> None (usa o nome em texto)."""
+    """Logo do aluno (png/jpg/gif/webp local). SVG ou falha de leitura -> None (usa o nome em texto)."""
     logo = marca.get("logo")
     if not logo:
         return None
     try:
         if str(logo).lower().startswith("https://"):
-            import io, ipaddress, socket, urllib.parse, urllib.request
-            host = urllib.parse.urlsplit(logo).hostname or ""
-            if not all(ipaddress.ip_address(a[4][0]).is_global for a in socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)):
-                raise ValueError("logo https aponta para endereço não público")
-            class _SemRedirect(urllib.request.HTTPRedirectHandler):
-                def redirect_request(self, *a, **k):
-                    return None            # redirecionamento = recusado (poderia apontar para a rede interna)
-            with urllib.request.build_opener(_SemRedirect).open(logo, timeout=10) as r:
-                dados = r.read(2_000_001)
-                if len(dados) > 2_000_000:
-                    raise ValueError("logo https maior que 2 MB")
-                im = Image.open(io.BytesIO(dados))
-                if im.width * im.height > 4_000_000:
-                    raise ValueError("logo com dimensões grandes demais")
+            # o script não baixa nada da rede (evita SSRF/DNS rebinding): para o logo aparecer no carrossel,
+            # o aluno grava o ARQUIVO local (marca.py set --json -), senão o slide leva o nome em texto
+            raise ValueError("logo por link https não é baixado pelo carrossel; use arquivo local")
         else:
             lp = pathlib.Path(logo).expanduser()
             # só aceita imagem dentro da pasta de config (nada de ler arquivo arbitrário nem symlink)
