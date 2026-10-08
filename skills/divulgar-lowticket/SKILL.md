@@ -44,7 +44,7 @@ rode a Etapa 1 se ainda não montou."* Nunca inventar marca nem seguir sem ela.
 python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca; imprime acento, texto_sobre_acento, logo e avisos
 ```
 exit 1 → PERGUNTAR ao aluno a cor da marca (hex) e o nome e gravar com
-`marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada); se ele não quiser informar a cor, rodar
+`marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`, JSON em uma linha gerado por `json.dumps`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada); se ele não quiser informar a cor, rodar
 `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar **e imprime o aviso**) e repetir o aviso ao aluno.
 Logo ainda não perguntado (`python3 ~/.claude/skills/kit-lancador/marca.py check` → `"logo": "nao_perguntado"`): perguntar uma vez e gravar
 com `marca.py set --json -` com `{"logo": "<caminho|https|nenhum>"}` no stdin (heredoc `<<'JSON'`). Sem logo, os materiais levam só o nome da marca em

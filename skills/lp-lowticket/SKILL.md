@@ -45,7 +45,7 @@ cat ~/kit-lancador-artefatos/miniapp/manifest.json
   python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca
   ```
   - **exit 1:** PERGUNTAR ao aluno a cor da marca (hex) e o nome, e gravar com
-    `marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada). Se ele não quiser informar a cor, rodar
+    `marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`, JSON em uma linha gerado por `json.dumps`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada). Se ele não quiser informar a cor, rodar
     `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar e imprime o aviso) e **repetir o aviso ao aluno**.
     Nunca cair no âmbar sem avisar.
   - **Logo:** se `python3 ~/.claude/skills/kit-lancador/marca.py check` mostra `"logo": "nao_perguntado"`, perguntar uma vez ("tem um logo
@@ -142,12 +142,14 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
     --cor-primaria: <resolve.primaria>;
     --cor-acento:   <resolve.acento>;               /* COR DA MARCA: CTA, preço, destaques */
     --cor-texto-no-acento: <resolve.texto_sobre_acento>;  /* texto de botão sobre a cor da marca */
+    --cor-secundaria: <resolve.secundaria ou, se vazia, a própria resolve.acento>;  /* cor de apoio opcional: selos, ícones, divisores */
     --cor-fundo:    <resolve.fundo>;
     --fonte-titulo: 'Inter', system-ui, sans-serif;
     --fonte-corpo:  'Inter', system-ui, sans-serif;
     --fonte-mono:   'JetBrains Mono', ui-monospace, monospace; /* preços, countdown, badges */
   }
   ```
+  **Contraste de TEXTO colorido (preço, destaque, link):** usar `var(--cor-acento)` como cor de texto só se ela tiver ≥ 4,5:1 contra o fundo onde o texto está (mesma fórmula de luminância do helper); abaixo disso o texto usa a cor normal do corpo e a cor da marca fica em preenchimentos, bordas e botão.
   **Todo texto do aluno (nome da marca, produto, promessa, URLs) entra no HTML escapado para o contexto**: `html.escape(valor, quote=True)` em texto e atributos (`alt`, `content`, `title`), só link `https://` em `src`/`href`, e nada disso é interpolado dentro de `<script>` ou CSS. Os valores vêm do `python3 ~/.claude/skills/kit-lancador/marca.py resolve` — SEMPRE a paleta do aluno (identidade white-label — nunca
   reusar a cor de outro aluno). Todo uso de "cor da marca" (botão de CTA, preço, destaque, ícone,
   selo) lê `var(--cor-acento)`; **nenhum hex da marca escrito direto** nas regras de CSS. Botão

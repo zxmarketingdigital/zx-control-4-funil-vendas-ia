@@ -69,6 +69,7 @@ preserva os outros campos do `marca.json`):
 python3 ~/.claude/skills/kit-lancador/marca.py set --json - <<'JSON'
 {"nome": "<nome>", "acento": "#1A73E8", "primaria": "#0B1220", "fundo": "#FFFFFF", "logo": "<caminho|https://...|nenhum>"}
 JSON
+# O JSON vai SEMPRE em uma linha só, gerado por json.dumps (quebras de linha do texto viram \n): assim nenhuma linha do texto do aluno consegue encerrar o heredoc.
 # primaria, fundo e logo são opcionais (logo: caminho, https, ou null/"nenhum" para sem logo). Heredoc com delimitador entre aspas: o texto do aluno nunca passa pelo shell.
 ```
 
