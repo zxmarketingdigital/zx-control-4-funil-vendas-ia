@@ -274,7 +274,9 @@ def _args_de_json(args: list[str]) -> list[str]:
             del dados[alias]
     extras = []
     for k in ("nome", "acento", "primaria", "secundaria", "fundo", "logo"):
-        if k in dados and dados[k] is not None:
+        if k == "logo" and k in dados and dados[k] is None:
+            extras += ["--logo", "nenhum"]       # null explícito = "sem logo" (diferente de campo ausente)
+        elif k in dados and dados[k] is not None:
             if not isinstance(dados[k], str):
                 raise SystemExit(f"ERRO: '{k}' deve ser texto.")
             extras += [f"--{k}", dados[k]]

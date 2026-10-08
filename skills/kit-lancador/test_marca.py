@@ -243,6 +243,14 @@ class MarcaTest(unittest.TestCase):
         info = json.loads(self.run_marca("resolve").stdout)["logo"]
         self.assertIsNone(info["tipo"])
 
+    def test_json_logo_null_remove_logo(self):
+        a = Path(self.tmp.name) / "a.png"
+        a.write_bytes(PNG_1x1)
+        self.run_marca("set", "--nome", "X", "--acento", "#0055AA", "--logo", str(a))
+        subprocess.run([sys.executable, str(MARCA), "set", "--json", "-"], input='{"logo": null}', capture_output=True, text=True, env=self.env)
+        self.assertIsNone(self.marca_json()["logo"])
+        self.assertEqual(list(self.cfg.glob("marca-logo-*")), [])
+
 
 if __name__ == "__main__":
     unittest.main()

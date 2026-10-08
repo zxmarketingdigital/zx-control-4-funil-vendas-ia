@@ -69,7 +69,7 @@ preserva os outros campos do `marca.json`):
 python3 ~/.claude/skills/kit-lancador/marca.py set --json - <<'JSON'
 {"nome": "<nome>", "acento": "#1A73E8", "primaria": "#0B1220", "fundo": "#FFFFFF", "logo": "<caminho|https://...|nenhum>"}
 JSON
-# primaria, fundo e logo são opcionais. Heredoc com delimitador entre aspas: o texto do aluno nunca passa pelo shell.
+# primaria, fundo e logo são opcionais (logo: caminho, https, ou null/"nenhum" para sem logo). Heredoc com delimitador entre aspas: o texto do aluno nunca passa pelo shell.
 ```
 
 **Se o aluno não quiser informar a cor agora:** não inventar uma. Rodar

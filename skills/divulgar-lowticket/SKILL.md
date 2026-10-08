@@ -80,7 +80,7 @@ mkdir -p ~/kit-lancador-artefatos/divulgar
 O `.html` é um template simples e responsivo (largura ~600px, fontes do sistema, cores do
 `resolve`, botão de CTA sólido — sem gradiente/glow), com o texto do `.md` já formatado. Botão:
 fundo `resolve.acento` e texto `resolve.texto_sobre_acento` (contraste legível mesmo com cor
-clara). **Todo valor dinâmico (nome da marca, nome do destinatário, assunto, links) entra no HTML escapado** (`html.escape(valor, quote=True)`; `&`, `<`, `>`, aspas viram entidades); links (CTA, logo) só aceitos se começarem com `https://` — `javascript:`, `data:` e afins são recusados antes de entrar em `href`/`src` — nunca interpolar texto cru em atributo ou corpo. Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
+clara). **Todo valor dinâmico (nome da marca, nome do destinatário, assunto, links) entra no HTML escapado** (`html.escape(valor, quote=True)`; `&`, `<`, `>`, aspas viram entidades); links (CTA, logo) só aceitos se começarem com `https://` e não tiverem usuário/senha (`https://user:pw@...`) — `javascript:`, `data:` e afins são recusados antes de entrar em `href`/`src` — nunca interpolar texto cru em atributo ou corpo. Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
 height="40">`); logo local não funciona em email (clientes bloqueiam imagem `data:` e arquivo local) — nesse
 caso usar o nome da marca em texto e avisar o aluno que, para ter o logo no email, ele precisa hospedá-lo
 e gravar o link com `marca.py set --json -` (campo `logo`, como nas outras etapas). Sem logo, o nome da marca em texto.

@@ -134,6 +134,7 @@ RLS + painel Pages + Gemini como cérebro trocável):
     `resolve.primaria`, `--on-brand` = `resolve.texto_sobre_acento`) definida no `:root` do
     `painel/style.css` e das páginas de `docs/`; todo botão, destaque e preço lê `var(--brand)`.
     Nenhum hex fixo da marca nas regras de CSS.
+  - **Texto do aluno escapado:** nome da marca e do produto entram no HTML com `html.escape(valor, quote=True)`; `href`/`src` só `https://` ou relativo.
   - **Logo:** `<img src="<resolve.logo.html_src>" alt="<nome da marca>">` no topo do painel e de
     cada página de `docs/` (logo local: `logo.copiar_para_pasta` é `true` → copiar `logo.src` para a
     pasta e usar `html_src`, o nome do arquivo; logo https: link direto). Sem logo, o **nome da marca em texto**. Nunca "ZX LAB" no lugar

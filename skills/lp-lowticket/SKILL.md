@@ -157,7 +157,7 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
   o `resolve` traz o aviso em `avisos`, que você **repete ao aluno no resumo da etapa**.
 - **Logo e nome na LP:** no topo (header) e no rodapé, usar o logo do aluno quando houver:
   `<img src="<resolve.logo.html_src>" alt="<nome da marca>" height="40">`. Logo local
-  (`logo.copiar_para_pasta` = `true`): copiar o arquivo `logo.src` para a pasta da LP e usar
+  (`logo.copiar_para_pasta` = `true`): se `logo.data_uri` vier preenchido, usá-lo no `src` (a LP continua um arquivo só); senão copiar o arquivo `logo.src` para a pasta da LP e usar
   `logo.html_src` (o nome do arquivo) no `src`; logo https: usar o link direto. Sem logo, escrever só o **nome da marca em texto** — nunca logo ou nome
   "ZX LAB" no lugar. Usar o nome da marca também no `<title>`, no `og:site_name` e na identificação
   do rodapé.
