@@ -148,7 +148,7 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
     --fonte-mono:   'JetBrains Mono', ui-monospace, monospace; /* preços, countdown, badges */
   }
   ```
-  Os valores vêm do `python3 ~/.claude/skills/kit-lancador/marca.py resolve` — SEMPRE a paleta do aluno (identidade white-label — nunca
+  **Todo texto do aluno (nome da marca, produto, promessa, URLs) entra no HTML escapado para o contexto**: `html.escape(valor, quote=True)` em texto e atributos (`alt`, `content`, `title`), só link `https://` em `src`/`href`, e nada disso é interpolado dentro de `<script>` ou CSS. Os valores vêm do `python3 ~/.claude/skills/kit-lancador/marca.py resolve` — SEMPRE a paleta do aluno (identidade white-label — nunca
   reusar a cor de outro aluno). Todo uso de "cor da marca" (botão de CTA, preço, destaque, ícone,
   selo) lê `var(--cor-acento)`; **nenhum hex da marca escrito direto** nas regras de CSS. Botão
   de CTA: `background: var(--cor-acento); color: var(--cor-texto-no-acento)` — o helper já

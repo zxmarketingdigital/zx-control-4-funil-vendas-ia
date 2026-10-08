@@ -202,7 +202,10 @@ def carregar_logo(altura=90):
         if str(logo).lower().startswith("https://"):
             import io, urllib.request
             with urllib.request.urlopen(logo, timeout=10) as r:
-                im = Image.open(io.BytesIO(r.read(2_000_000)))
+                dados = r.read(2_000_001)
+                if len(dados) > 2_000_000:
+                    raise ValueError("logo https maior que 2 MB")
+                im = Image.open(io.BytesIO(dados))
         else:
             lp = pathlib.Path(logo).expanduser()
             # só aceita imagem dentro da pasta de config (nada de ler arquivo arbitrário nem symlink)
@@ -210,7 +213,8 @@ def carregar_logo(altura=90):
                 raise ValueError("logo local fora da pasta de config ou formato não aceito")
             im = Image.open(lp)
         im = im.convert("RGBA")
-        return im.resize((max(1, int(im.width * altura / im.height)), altura))
+        im.thumbnail((500, altura))   # mantém a proporção; logo panorâmico não estoura o slide
+        return im
     except Exception as e:
         print(f"AVISO: não consegui usar o logo ({e}); a marca aparece só com o nome em texto.")
         return None

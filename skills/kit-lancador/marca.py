@@ -41,6 +41,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 PADRAO_ZX = "#D97706"           # âmbar ZX — só entra se o aluno recusar informar a cor
 PRIMARIA_FALLBACK = "#0B1220"
@@ -128,6 +129,10 @@ def gravar_marca(dados: dict) -> None:
 def _copiar_logo(origem: str) -> str:
     """URL https fica como está; arquivo local é copiado para a pasta de config. Devolve o valor a gravar."""
     if origem.lower().startswith("https://"):
+        u = urlsplit(origem)
+        if not u.hostname or u.username or u.password or u.query or u.fragment:
+            raise SystemExit("ERRO: URL de logo não pode ter usuário, senha, parâmetros (?token=...) nem #. "
+                             "Use um link público direto da imagem ou um arquivo local.")
         return origem
     if origem.lower().startswith("http://"):
         raise SystemExit("ERRO: URL de logo precisa ser https://. Use https ou um arquivo local.")
@@ -300,17 +305,20 @@ def _logo_info(m: dict) -> dict:
         dentro = False
     if p.suffix.lower() not in LOGO_EXTS or p.is_symlink() or not dentro:
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
-                "aviso": f"logo ignorado (precisa ser imagem png/jpg/gif/svg/webp dentro de {config_dir()}): {p}. "
+                "aviso": f"logo ignorado (precisa ser imagem png/jpg/gif/svg/webp dentro de {config_dir()}): {p.name}. "
                          "Rode marca.py set --logo <arquivo> para copiá-lo."}
     if not p.is_file():
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
-                "aviso": f"logo configurado não existe mais: {p}"}
+                "aviso": f"logo configurado não existe mais: {p.name}"}
     tam = p.stat().st_size
     info = {"tipo": "arquivo", "src": str(p), "html_src": p.name, "copiar_para_pasta": True, "data_uri": None}
     if tam <= LOGO_DATA_URI_MAX:   # alternativa p/ HTML de arquivo único; as etapas preferem copiar o arquivo
         mime = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
-        uri = f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode('ascii')}"
-        if len(uri) <= LOGO_DATA_URI_MAX:   # o limite vale para o tamanho já codificado
+        try:
+            uri = f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode('ascii')}"
+        except OSError:   # arquivo trocado/limpo por um set concorrente: segue sem data URI
+            uri = ""
+        if uri and len(uri) <= LOGO_DATA_URI_MAX:   # o limite vale para o tamanho já codificado
             info["data_uri"] = uri
     return info
 

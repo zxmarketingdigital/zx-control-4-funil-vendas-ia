@@ -218,6 +218,11 @@ class MarcaTest(unittest.TestCase):
         self.assertTrue(Path(logo).is_file())
         self.assertEqual(len(list(self.cfg.glob("marca-logo-*"))), 1)
 
+    def test_url_de_logo_com_credencial_ou_token_recusada(self):
+        for u in ("https://user:pw@cdn.example/logo.png", "https://cdn.example/logo.png?token=abc", "https://cdn.example/logo.png#x"):
+            self.assertNotEqual(self.run_marca("set", "--nome", "X", "--logo", u).returncode, 0, u)
+        self.assertEqual(self.run_marca("set", "--nome", "X", "--logo", "https://cdn.example/logo.png").returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
