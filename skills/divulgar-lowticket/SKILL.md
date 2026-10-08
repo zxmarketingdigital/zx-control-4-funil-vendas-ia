@@ -156,7 +156,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 HOME = pathlib.Path.home()
 marca = json.loads((HOME / ".operacao-ia/config/marca.json").read_text())
-cores = marca.get("cores") or {}
+cores = dict(marca.get("cores") or {})
+cores.setdefault("acento", marca.get("cor_primaria"))  # aceita também as chaves do contrato (cor_primaria)
 NOME = (marca.get("marca") or "").strip()
 if not NOME or not cores.get("acento"):
     raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --nome ... --acento '#HEX' (ou --usar-padrao-zx)")
@@ -172,7 +173,21 @@ def hx(h):
 
 # O carrossel é escuro: se o aluno não definiu fundo, usa um azul-noite neutro (o fundo claro
 # do cores.fundo da LP não serve aqui).
-FUNDO, ACENTO, TEXTO = hx(cores.get("fundo") or "#0B1220"), hx(cores["acento"]), (245, 245, 245)
+FUNDO, ACENTO = hx(cores.get("fundo") or "#0B1220"), hx(cores["acento"])
+
+def _lum(rgb):
+    c = [(v / 255 / 12.92) if v / 255 <= 0.03928 else (((v / 255) + 0.055) / 1.055) ** 2.4 for v in rgb]
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+def _contraste(a, b):
+    x, y = _lum(a), _lum(b)
+    return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+
+# Texto do carrossel: claro ou escuro, o que tiver >= 4,5:1 sobre o fundo (nunca texto ilegível).
+TEXTO = max([(245, 245, 245), (17, 24, 39)], key=lambda c: _contraste(c, FUNDO))
+# Cor de destaque (CTA e contador de slides): a cor da marca só se ler bem (>= 4,5:1) sobre o fundo;
+# senão usa o TEXTO — a identidade da marca fica na barra do topo e no logo.
+DESTAQUE = ACENTO if _contraste(ACENTO, FUNDO) >= 4.5 else TEXTO
 W, H = 1080, 1350
 
 def carregar_logo(altura=90):
@@ -223,12 +238,12 @@ def slide(texto, idx, total, tipo, out_path):
     for linha in linhas:
         bbox = draw.textbbox((0, 0), linha, font=f)
         x = (W - (bbox[2] - bbox[0])) // 2
-        cor = ACENTO if tipo == "cta" else TEXTO
+        cor = DESTAQUE if tipo == "cta" else TEXTO
         draw.text((x, y), linha, font=f, fill=cor)
         y += tamanho + 16
     if tipo != "capa":
         marcador = fonte(32)
-        draw.text((W - 110, H - 70), f"{idx}/{total}", font=marcador, fill=ACENTO)
+        draw.text((W - 110, H - 70), f"{idx}/{total}", font=marcador, fill=DESTAQUE)
     img.save(out_path)
 
 SLIDES = [

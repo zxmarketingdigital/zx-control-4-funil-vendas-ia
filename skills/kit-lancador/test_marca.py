@@ -132,6 +132,29 @@ class MarcaTest(unittest.TestCase):
         self.assertFalse((self.cfg / "marca-logo.png").exists())
         self.assertEqual(list(self.cfg.glob("*.tmp")), [])
 
+    def test_chaves_do_contrato_cor_primaria_e_secundaria_sao_aceitas(self):
+        self.cfg.mkdir(parents=True)
+        (self.cfg / "marca.json").write_text(json.dumps({"nome": "Clínica Y", "cor_primaria": "#1ae", "cor_secundaria": "#334455"}))
+        self.assertEqual(self.run_marca("check").returncode, 0)
+        res = json.loads(self.run_marca("resolve").stdout)
+        self.assertEqual(res["acento"], "#11AAEE")
+        self.assertEqual(res["secundaria"], "#334455")
+        self.assertEqual(res["marca"], "Clínica Y")
+
+    def test_padrao_zx_corrige_cor_invalida_ja_gravada(self):
+        self.cfg.mkdir(parents=True)
+        (self.cfg / "marca.json").write_text(json.dumps({"marca": "X", "cores": {"acento": "azul"}}))
+        self.assertEqual(self.run_marca("check").returncode, 1)
+        r = self.run_marca("set", "--usar-padrao-zx")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("cor padrão ZX", r.stderr)
+        self.assertEqual(self.marca_json()["cores"]["acento"], "#D97706")
+        self.assertEqual(self.run_marca("check").returncode, 0)
+
+    def test_secundaria_via_set(self):
+        self.run_marca("set", "--nome", "X", "--acento", "#0055AA", "--secundaria", "#abc")
+        self.assertEqual(json.loads(self.run_marca("resolve").stdout)["secundaria"], "#AABBCC")
+
     def test_json_corrompido_nao_e_sobrescrito(self):
         self.cfg.mkdir(parents=True)
         (self.cfg / "marca.json").write_text("{quebrado")

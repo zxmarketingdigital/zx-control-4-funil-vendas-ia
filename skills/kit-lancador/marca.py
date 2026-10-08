@@ -15,6 +15,8 @@ são preservados intactos):
     marca            nome da marca/produto (obrigatório)
     cores.acento     COR DA MARCA, hex #RRGGBB (obrigatório; botões, preço, destaques)
     cores.primaria   cor de apoio/escura, hex (opcional; se faltar, #0B1220)
+    cores.secundaria cor secundária da marca, hex (opcional)
+    (aliases do contrato, lidos se cores.* faltar: nome, cor_primaria, cor_secundaria)
     cores.fundo      cor de fundo, hex (opcional; se faltar, #FFFFFF)
     logo             caminho do arquivo copiado p/ a pasta de config, ou URL https; null = o aluno
                      escolheu não ter logo (só o nome em texto); ausente = ainda não perguntado
@@ -22,7 +24,7 @@ são preservados intactos):
 
 CLI:
     python3 marca.py check                   # exit 0 se nome+cor existem; 1 e lista o que falta
-    python3 marca.py set [--nome N] [--acento #HEX] [--primaria #HEX] [--fundo #HEX]
+    python3 marca.py set [--nome N] [--acento #HEX] [--primaria #HEX] [--secundaria #HEX] [--fundo #HEX]
                          [--logo CAMINHO|URL|nenhum] [--usar-padrao-zx]
     python3 marca.py resolve                 # JSON final p/ as etapas (cores, texto sobre a cor, logo)
     python3 marca.py texto-sobre #HEX        # imprime #111827 ou #FFFFFF (maior contraste)
@@ -160,11 +162,21 @@ def _copiar_logo(origem: str) -> str:
 
 # ───────────────────────── comandos ─────────────────────────
 
+def _cor_marca(m: dict):
+    """Cor da marca: cores.acento (formato do kit) ou cor_primaria (chave do contrato/SPEC)."""
+    return (m.get("cores") or {}).get("acento") or m.get("cor_primaria")
+
+
+def _cor_apoio(m: dict):
+    """Cor secundária opcional: cores.secundaria ou cor_secundaria (contrato)."""
+    return (m.get("cores") or {}).get("secundaria") or m.get("cor_secundaria")
+
+
 def _faltando(m: dict) -> list[str]:
     falta = []
-    if not str(m.get("marca", "")).strip():
+    if not str(m.get("marca", "") or m.get("nome", "")).strip():
         falta.append("nome (marca)")
-    acento = (m.get("cores") or {}).get("acento")
+    acento = _cor_marca(m)
     if not (isinstance(acento, str) and normalizar_hex(acento)):
         falta.append("cor da marca (cores.acento, hex)")
     return falta
@@ -189,7 +201,7 @@ def cmd_set(args: list[str]) -> int:
             usar_padrao = True
             i += 1
             continue
-        if a not in ("--nome", "--acento", "--primaria", "--fundo", "--logo") or i + 1 >= len(args):
+        if a not in ("--nome", "--acento", "--primaria", "--secundaria", "--fundo", "--logo") or i + 1 >= len(args):
             raise SystemExit(f"argumento inválido: {a}")
         valor = args[i + 1]
         i += 2
@@ -197,7 +209,7 @@ def cmd_set(args: list[str]) -> int:
             if not valor.strip():
                 raise SystemExit("ERRO: nome vazio.")
             m["marca"] = valor.strip()
-        elif a in ("--acento", "--primaria", "--fundo"):
+        elif a in ("--acento", "--primaria", "--secundaria", "--fundo"):
             h = normalizar_hex(valor)
             if not h:
                 raise SystemExit(f"ERRO: '{valor}' não é uma cor válida. Use hex tipo #1A73E8 ou #1AE.")
@@ -206,7 +218,9 @@ def cmd_set(args: list[str]) -> int:
                 m.pop("cor_padrao_zx", None)
         elif a == "--logo":
             m["logo"] = None if valor.strip().lower() in ("nenhum", "nao", "não", "") else _copiar_logo(valor.strip())
-    if usar_padrao and not cores.get("acento"):
+    atual = cores.get("acento") or m.get("cor_primaria")
+    if usar_padrao and not (isinstance(atual, str) and normalizar_hex(atual)):
+        # sem cor, ou com cor inválida já gravada: aplica o padrão e avisa
         cores["acento"] = PADRAO_ZX
         m["cor_padrao_zx"] = True
         print(f"AVISO: Usando a cor padrão ZX (âmbar {PADRAO_ZX}). Troque depois em {marca_path()} (campo cores.acento).",
@@ -243,7 +257,8 @@ def cmd_resolve(_args: list[str]) -> int:
         print(json.dumps({"faltando": falta}, ensure_ascii=False))
         return 1
     cores = m.get("cores") or {}
-    acento = normalizar_hex(cores["acento"])
+    acento = normalizar_hex(_cor_marca(m))
+    apoio = normalizar_hex(_cor_apoio(m) or "")
     primaria = normalizar_hex(cores.get("primaria") or "") or PRIMARIA_FALLBACK
     fundo = normalizar_hex(cores.get("fundo") or "") or FUNDO_FALLBACK
     avisos = []
@@ -253,10 +268,11 @@ def cmd_resolve(_args: list[str]) -> int:
     if logo.get("aviso"):
         avisos.append(logo.pop("aviso"))
     print(json.dumps({
-        "marca": m["marca"].strip(),
+        "marca": str(m.get("marca") or m.get("nome")).strip(),
         "acento": acento,
         "texto_sobre_acento": texto_sobre(acento),
         "primaria": primaria,
+        "secundaria": apoio,
         "fundo": fundo,
         "logo": logo,
         "avisos": avisos,
