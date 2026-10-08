@@ -153,11 +153,16 @@ def _copiar_logo(origem: str) -> str:
             if tmp.exists() or tmp.is_symlink():
                 tmp.unlink()
             raise SystemExit(f"ERRO: não consegui copiar o logo ({e}). O logo anterior foi mantido.")
-    # só agora, com a cópia nova no lugar, remove logos antigos de outra extensão
-    for velho in config_dir().glob("marca-logo.*"):
-        if velho != destino and not velho.name.endswith(".tmp"):
-            velho.unlink()
     return str(destino)
+
+
+def _limpar_logos_orfaos(m: dict) -> None:
+    """Depois que o marca.json novo foi gravado: remove marca-logo.* que ele não referencia mais."""
+    atual = m.get("logo")
+    atual_nome = Path(str(atual)).name if atual and not str(atual).lower().startswith("https://") else None
+    for velho in config_dir().glob("marca-logo.*"):
+        if velho.name != atual_nome and not velho.name.endswith(".tmp") and not velho.is_dir():
+            velho.unlink()
 
 
 # ───────────────────────── comandos ─────────────────────────
@@ -195,6 +200,7 @@ def cmd_set(args: list[str]) -> int:
     cores = dict(m.get("cores") or {})
     i = 0
     usar_padrao = False
+    logo_mexido = False
     while i < len(args):
         a = args[i]
         if a == "--usar-padrao-zx":
@@ -217,6 +223,7 @@ def cmd_set(args: list[str]) -> int:
             if a == "--acento":
                 m.pop("cor_padrao_zx", None)
         elif a == "--logo":
+            logo_mexido = True
             m["logo"] = None if valor.strip().lower() in ("nenhum", "nao", "não", "") else _copiar_logo(valor.strip())
     atual = cores.get("acento") or m.get("cor_primaria")
     if usar_padrao and not (isinstance(atual, str) and normalizar_hex(atual)):
@@ -228,6 +235,8 @@ def cmd_set(args: list[str]) -> int:
     if cores:
         m["cores"] = cores
     gravar_marca(m)
+    if logo_mexido:
+        _limpar_logos_orfaos(m)   # só depois do JSON novo no disco: falha antes disso mantém o logo antigo
     print(f"marca.json atualizado em {marca_path()}")
     return 0
 
@@ -239,6 +248,14 @@ def _logo_info(m: dict) -> dict:
     if str(logo).lower().startswith("https://"):
         return {"tipo": "url", "src": logo, "html_src": logo, "copiar_para_pasta": False}
     p = Path(str(logo)).expanduser()
+    try:
+        dentro = p.resolve().parent == config_dir().resolve()
+    except OSError:
+        dentro = False
+    if p.suffix.lower() not in LOGO_EXTS or p.is_symlink() or not dentro:
+        return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
+                "aviso": f"logo ignorado (precisa ser imagem png/jpg/svg/webp dentro de {config_dir()}): {p}. "
+                         "Rode marca.py set --logo <arquivo> para copiá-lo."}
     if not p.is_file():
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
                 "aviso": f"logo configurado não existe mais: {p}"}

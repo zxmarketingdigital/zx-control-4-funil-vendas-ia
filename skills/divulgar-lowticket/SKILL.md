@@ -158,7 +158,7 @@ HOME = pathlib.Path.home()
 marca = json.loads((HOME / ".operacao-ia/config/marca.json").read_text())
 cores = dict(marca.get("cores") or {})
 cores.setdefault("acento", marca.get("cor_primaria"))  # aceita também as chaves do contrato (cor_primaria)
-NOME = (marca.get("marca") or "").strip()
+NOME = str(marca.get("marca") or marca.get("nome") or "").strip()
 if not NOME or not cores.get("acento"):
     raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --nome ... --acento '#HEX' (ou --usar-padrao-zx)")
 if marca.get("cor_padrao_zx"):

@@ -155,6 +155,27 @@ class MarcaTest(unittest.TestCase):
         self.run_marca("set", "--nome", "X", "--acento", "#0055AA", "--secundaria", "#abc")
         self.assertEqual(json.loads(self.run_marca("resolve").stdout)["secundaria"], "#AABBCC")
 
+    def test_resolve_ignora_logo_fora_da_pasta_de_config(self):
+        self.cfg.mkdir(parents=True)
+        segredo = Path(self.tmp.name) / "cred.png"
+        segredo.write_bytes(b"conteudo-sensivel")
+        (self.cfg / "marca.json").write_text(json.dumps({"marca": "X", "cores": {"acento": "#0055AA"}, "logo": str(segredo)}))
+        res = json.loads(self.run_marca("resolve").stdout)
+        self.assertIsNone(res["logo"]["tipo"])
+        self.assertTrue(res["avisos"])
+        self.assertNotIn("conteudo", json.dumps(res))
+
+    def test_logo_antigo_sobrevive_se_marca_json_nao_grava(self):
+        a = Path(self.tmp.name) / "a.png"
+        a.write_bytes(PNG_1x1)
+        self.run_marca("set", "--nome", "X", "--logo", str(a))
+        # marca.json corrompido faz o set abortar antes de gravar: o logo antigo continua lá
+        (self.cfg / "marca.json").write_text("{quebrado")
+        j = Path(self.tmp.name) / "c.jpg"
+        j.write_bytes(b"\xff\xd8\xff")
+        self.assertNotEqual(self.run_marca("set", "--logo", str(j)).returncode, 0)
+        self.assertTrue((self.cfg / "marca-logo.png").is_file())
+
     def test_json_corrompido_nao_e_sobrescrito(self):
         self.cfg.mkdir(parents=True)
         (self.cfg / "marca.json").write_text("{quebrado")
