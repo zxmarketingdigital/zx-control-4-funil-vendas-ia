@@ -355,7 +355,11 @@ def _logo_info(m: dict) -> dict:
     if not p.is_file():
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
                 "aviso": f"logo configurado não existe mais: {p.name}"}
-    tam = p.stat().st_size
+    try:
+        tam = p.stat().st_size
+    except OSError:   # removido por um set concorrente entre o is_file() e o stat()
+        return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
+                "aviso": f"logo configurado não existe mais: {p.name}"}
     info = {"tipo": "arquivo", "src": str(p), "html_src": p.name, "copiar_para_pasta": True, "data_uri": None}
     if tam <= LOGO_DATA_URI_MAX:   # alternativa p/ HTML de arquivo único; as etapas preferem copiar o arquivo
         mime = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
