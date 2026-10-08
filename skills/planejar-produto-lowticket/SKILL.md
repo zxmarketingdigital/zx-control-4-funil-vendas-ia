@@ -66,7 +66,10 @@ Gravar com o helper (ele valida, normaliza o hex, copia o logo para `~/.operacao
 preserva os outros campos do `marca.json`):
 
 ```bash
-python3 ~/.claude/skills/kit-lancador/marca.py set --nome "<nome>" --acento "#1A73E8" [--primaria "#0B1220"] [--fundo "#FFFFFF"] --logo "<caminho|https://...|nenhum>"
+python3 ~/.claude/skills/kit-lancador/marca.py set --json - <<'JSON'
+{"nome": "<nome>", "acento": "#1A73E8", "primaria": "#0B1220", "fundo": "#FFFFFF", "logo": "<caminho|https://...|nenhum>"}
+JSON
+# primaria, fundo e logo são opcionais. Heredoc com delimitador entre aspas: o texto do aluno nunca passa pelo shell.
 ```
 
 **Se o aluno não quiser informar a cor agora:** não inventar uma. Rodar

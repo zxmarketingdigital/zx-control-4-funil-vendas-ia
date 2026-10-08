@@ -42,10 +42,10 @@ cat ~/kit-lancador-artefatos/miniapp/manifest.json 2>/dev/null   # se já existi
   python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca
   ```
   **exit 1:** PERGUNTAR ao aluno a cor da marca (hex) e o nome e gravar com
-  `python3 ~/.claude/skills/kit-lancador/marca.py set --nome "..." --acento "#HEX"`; se ele não quiser informar a cor, rodar
+  `marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada); se ele não quiser informar a cor, rodar
   `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar **e imprime o aviso**) e repetir o aviso ao aluno.
   Logo ainda não perguntado (`python3 ~/.claude/skills/kit-lancador/marca.py check` → `"logo": "nao_perguntado"`): perguntar uma vez e
-  gravar com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Usar `acento`, `texto_sobre_acento`,
+  gravar com `marca.py set --json -` com `{"logo": "<caminho|https|nenhum>"}` no stdin (heredoc `<<'JSON'`). Usar `acento`, `texto_sobre_acento`,
   `primaria`, `fundo` e `logo.html_src` do JSON do `resolve` (logo local: `logo.copiar_para_pasta` = `true` → copiar `logo.src` para a pasta do checkout e usar `html_src`, o nome do arquivo; logo https: link direto).
 - **Resolver o preço ANTES de montar o preview:**
   1. Localizar no blueprint a seção de **preço de entrada** e a seção **Order bump** — são texto

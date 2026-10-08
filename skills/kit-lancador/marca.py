@@ -24,6 +24,7 @@ são preservados intactos):
 
 CLI:
     python3 marca.py check                   # exit 0 se nome+cor existem; 1 e lista o que falta
+    python3 marca.py set --json -   # valores via stdin (preferido: sem aspas nem shell no meio)
     python3 marca.py set [--nome N] [--acento #HEX] [--primaria #HEX] [--secundaria #HEX] [--fundo #HEX]
                          [--logo CAMINHO|URL|nenhum] [--usar-padrao-zx]
     python3 marca.py resolve                 # JSON final p/ as etapas (cores, texto sobre a cor, logo)
@@ -246,7 +247,33 @@ def cmd_set(args: list[str]) -> int:
         return _cmd_set(args)
 
 
+def _args_de_json(args: list[str]) -> list[str]:
+    """`set --json -`: lê os valores de um JSON no stdin (nome, acento, primaria, secundaria, fundo, logo).
+    Evita montar comando de shell com texto digitado pelo aluno (aspas, $(...), crases)."""
+    if args.count("--json") != 1 or args[args.index("--json") + 1:args.index("--json") + 2] != ["-"]:
+        return args
+    i = args.index("--json")
+    resto = args[:i] + args[i + 2:]
+    try:
+        dados = json.loads(sys.stdin.read())
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"ERRO: JSON inválido no stdin ({e}).")
+    if not isinstance(dados, dict):
+        raise SystemExit("ERRO: o JSON do stdin deve ser um objeto.")
+    extras = []
+    for k in ("nome", "acento", "primaria", "secundaria", "fundo", "logo"):
+        if k in dados and dados[k] is not None:
+            if not isinstance(dados[k], str):
+                raise SystemExit(f"ERRO: '{k}' deve ser texto.")
+            extras += [f"--{k}", dados[k]]
+    desconhecidas = set(dados) - {"nome", "acento", "primaria", "secundaria", "fundo", "logo"}
+    if desconhecidas:
+        raise SystemExit(f"ERRO: campos desconhecidos no JSON: {sorted(desconhecidas)}")
+    return resto + extras
+
+
 def _cmd_set(args: list[str]) -> int:
+    args = _args_de_json(args)
     m = ler_marca()
     cores = dict(m.get("cores") or {})
     i = 0

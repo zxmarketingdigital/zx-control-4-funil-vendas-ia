@@ -44,10 +44,10 @@ rode a Etapa 1 se ainda não montou."* Nunca inventar marca nem seguir sem ela.
 python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca; imprime acento, texto_sobre_acento, logo e avisos
 ```
 exit 1 → PERGUNTAR ao aluno a cor da marca (hex) e o nome e gravar com
-`python3 ~/.claude/skills/kit-lancador/marca.py set --nome "..." --acento "#HEX"`; se ele não quiser informar a cor, rodar
+`marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada); se ele não quiser informar a cor, rodar
 `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar **e imprime o aviso**) e repetir o aviso ao aluno.
 Logo ainda não perguntado (`python3 ~/.claude/skills/kit-lancador/marca.py check` → `"logo": "nao_perguntado"`): perguntar uma vez e gravar
-com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Sem logo, os materiais levam só o nome da marca em
+com `marca.py set --json -` com `{"logo": "<caminho|https|nenhum>"}` no stdin (heredoc `<<'JSON'`). Sem logo, os materiais levam só o nome da marca em
 texto — nunca o logo ou o nome da ZX.
 
 Usar sempre o **preço e os agentes reais do manifesto** (nunca reaproveitar contagem/preço de
@@ -80,10 +80,10 @@ mkdir -p ~/kit-lancador-artefatos/divulgar
 O `.html` é um template simples e responsivo (largura ~600px, fontes do sistema, cores do
 `resolve`, botão de CTA sólido — sem gradiente/glow), com o texto do `.md` já formatado. Botão:
 fundo `resolve.acento` e texto `resolve.texto_sobre_acento` (contraste legível mesmo com cor
-clara). **Todo valor dinâmico (nome da marca, nome do destinatário, assunto, links) entra no HTML escapado** (`html.escape(valor, quote=True)`; `&`, `<`, `>`, aspas viram entidades) — nunca interpolar texto cru em atributo ou corpo. Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
+clara). **Todo valor dinâmico (nome da marca, nome do destinatário, assunto, links) entra no HTML escapado** (`html.escape(valor, quote=True)`; `&`, `<`, `>`, aspas viram entidades); links (CTA, logo) só aceitos se começarem com `https://` — `javascript:`, `data:` e afins são recusados antes de entrar em `href`/`src` — nunca interpolar texto cru em atributo ou corpo. Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
 height="40">`); logo local não funciona em email (clientes bloqueiam imagem `data:` e arquivo local) — nesse
 caso usar o nome da marca em texto e avisar o aluno que, para ter o logo no email, ele precisa hospedá-lo
-e gravar o link com `marca.py set --logo https://...`. Sem logo, o nome da marca em texto.
+e gravar o link com `marca.py set --json -` (campo `logo`, como nas outras etapas). Sem logo, o nome da marca em texto.
 
 ## Passo 3 — Copy de post social (legenda + hashtags + CTA)
 
@@ -162,7 +162,7 @@ cores = dict(marca.get("cores") or {})
 cores.setdefault("acento", marca.get("cor_primaria"))  # aceita também as chaves do contrato (cor_primaria)
 NOME = str(marca.get("marca") or marca.get("nome") or "").strip()
 if not NOME or not cores.get("acento"):
-    raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --nome ... --acento '#HEX' (ou --usar-padrao-zx)")
+    raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --json - (ou set --usar-padrao-zx)")
 if marca.get("cor_padrao_zx"):
     print("AVISO: usando a cor padrão ZX (âmbar) porque a cor da marca não foi informada. "
           "Troque em ~/.operacao-ia/config/marca.json (cores.acento).")
@@ -200,18 +200,28 @@ def carregar_logo(altura=90):
         return None
     try:
         if str(logo).lower().startswith("https://"):
-            import io, urllib.request
-            with urllib.request.urlopen(logo, timeout=10) as r:
+            import io, ipaddress, socket, urllib.parse, urllib.request
+            host = urllib.parse.urlsplit(logo).hostname or ""
+            if not all(ipaddress.ip_address(a[4][0]).is_global for a in socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)):
+                raise ValueError("logo https aponta para endereço não público")
+            class _SemRedirect(urllib.request.HTTPRedirectHandler):
+                def redirect_request(self, *a, **k):
+                    return None            # redirecionamento = recusado (poderia apontar para a rede interna)
+            with urllib.request.build_opener(_SemRedirect).open(logo, timeout=10) as r:
                 dados = r.read(2_000_001)
                 if len(dados) > 2_000_000:
                     raise ValueError("logo https maior que 2 MB")
                 im = Image.open(io.BytesIO(dados))
+                if im.width * im.height > 4_000_000:
+                    raise ValueError("logo com dimensões grandes demais")
         else:
             lp = pathlib.Path(logo).expanduser()
             # só aceita imagem dentro da pasta de config (nada de ler arquivo arbitrário nem symlink)
             if lp.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp") or lp.is_symlink() or lp.resolve().parent != CFG.resolve():
                 raise ValueError("logo local fora da pasta de config ou formato não aceito")
             im = Image.open(lp)
+            if im.width * im.height > 4_000_000:
+                raise ValueError("logo com dimensões grandes demais")
         im = im.convert("RGBA")
         im.thumbnail((500, altura))   # mantém a proporção; logo panorâmico não estoura o slide
         return im

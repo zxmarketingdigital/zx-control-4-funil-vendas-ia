@@ -45,12 +45,12 @@ cat ~/kit-lancador-artefatos/miniapp/manifest.json
   python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca
   ```
   - **exit 1:** PERGUNTAR ao aluno a cor da marca (hex) e o nome, e gravar com
-    `python3 ~/.claude/skills/kit-lancador/marca.py set --nome "..." --acento "#HEX"`. Se ele não quiser informar a cor, rodar
+    `marca.py set --json -` com `{"nome": "...", "acento": "#HEX"}` no stdin (heredoc `<<'JSON'`) (**nunca** colar o texto do aluno numa linha de shell com aspas: `$(...)` e crases executariam; usar `--json -` com heredoc de delimitador entre aspas, que não expande nada). Se ele não quiser informar a cor, rodar
     `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar e imprime o aviso) e **repetir o aviso ao aluno**.
     Nunca cair no âmbar sem avisar.
   - **Logo:** se `python3 ~/.claude/skills/kit-lancador/marca.py check` mostra `"logo": "nao_perguntado"`, perguntar uma vez ("tem um logo
     em png, jpg, svg ou webp? me passa o caminho ou um link https; se não tiver, uso só o nome").
-    Gravar com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Sem logo, a LP mostra só o nome em texto.
+    Gravar com `marca.py set --json -` com `{"logo": "<caminho|https|nenhum>"}` no stdin (heredoc `<<'JSON'`). Sem logo, a LP mostra só o nome em texto.
   - O JSON do `resolve` traz `acento`, `texto_sobre_acento`, `primaria`, `fundo`, `logo.html_src`
     e `avisos` — usar esses valores no Passo 3 (nada de cor escrita de cabeça).
 - **Blueprint** (Etapa 1) dá a oferta resolvida: preço principal, order bump, upsell, ICP, dor

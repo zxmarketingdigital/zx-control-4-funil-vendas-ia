@@ -223,6 +223,15 @@ class MarcaTest(unittest.TestCase):
             self.assertNotEqual(self.run_marca("set", "--nome", "X", "--logo", u).returncode, 0, u)
         self.assertEqual(self.run_marca("set", "--nome", "X", "--logo", "https://cdn.example/logo.png").returncode, 0)
 
+    def test_json_stdin_nao_passa_pelo_shell(self):
+        nome = "$(touch /tmp/zx-nao-deve-existir) `x` \" ' ; |"
+        r = subprocess.run([sys.executable, str(MARCA), "set", "--json", "-"], input=json.dumps({"nome": nome, "acento": "#0055AA"}),
+                           capture_output=True, text=True, env=self.env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.marca_json()["marca"], nome)
+        bad = subprocess.run([sys.executable, str(MARCA), "set", "--json", "-"], input='{"foo": 1}', capture_output=True, text=True, env=self.env)
+        self.assertNotEqual(bad.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
