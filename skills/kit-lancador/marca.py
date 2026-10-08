@@ -39,7 +39,6 @@ import json
 import mimetypes
 import os
 import re
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -152,25 +151,31 @@ def _copiar_logo(origem: str) -> str:
     ext = src.suffix.lower()
     if ext not in LOGO_EXTS:
         raise SystemExit(f"ERRO: logo precisa ser png, jpg, svg ou webp (veio '{ext or 'sem extensão'}').")
-    if src.stat().st_size > LOGO_MAX_BYTES:
+    # lê uma vez só, com teto: o hash e a cópia usam exatamente os bytes que passaram pelo limite
+    try:
+        with open(src, "rb") as fh:
+            dados = fh.read(LOGO_MAX_BYTES + 1)
+    except OSError as e:
+        raise SystemExit(f"ERRO: não consegui ler o logo ({e}).")
+    if len(dados) > LOGO_MAX_BYTES:
         raise SystemExit("ERRO: logo maior que 2 MB. Use uma versão menor.")
     # nome com hash do conteúdo: trocar de logo nunca sobrescreve o arquivo que o marca.json atual referencia
-    h = hashlib.sha256(src.read_bytes()).hexdigest()[:8]
+    h = hashlib.sha256(dados).hexdigest()[:8]
     destino = config_dir() / f"marca-logo-{h}{ext}"
     destino.parent.mkdir(parents=True, exist_ok=True)
     if destino.is_symlink():
         raise SystemExit(f"ERRO: {destino} é um link simbólico; remova-o e tente de novo.")
     if src.resolve() != destino.resolve():
         # copia para temporário e troca atômica: se a cópia falhar, o logo antigo continua intacto
-        tmp = destino.with_name(destino.name + ".tmp")
-        if tmp.is_symlink() or tmp.exists():
-            tmp.unlink()
+        tmp = None
         try:
-            shutil.copyfile(src, tmp)
+            fd, tmp = tempfile.mkstemp(prefix=".marca-logo-", suffix=".tmp", dir=str(destino.parent))   # nome exclusivo
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(dados)
             os.replace(tmp, destino)
         except OSError as e:
-            if tmp.exists() or tmp.is_symlink():
-                tmp.unlink()
+            if tmp and os.path.exists(tmp):
+                os.unlink(tmp)
             raise SystemExit(f"ERRO: não consegui copiar o logo ({e}). O logo anterior foi mantido.")
     return str(destino)
 
