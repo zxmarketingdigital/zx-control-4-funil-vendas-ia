@@ -36,9 +36,23 @@ cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -
 cat ~/kit-lancador-artefatos/miniapp/manifest.json
 ```
 
-- **Marca** (`marca.json`) dá nome, nicho, persona, tom e **cores** (`marca.cores.primaria` /
-  `acento` / `fundo`) — se `marca.json` não existir, **parar** e orientar o aluno a criá-la
-  ("me ajuda a montar minha marca" no chat) antes de continuar. Nunca inventar uma marca.
+- **Marca** (`marca.json`) dá nome, nicho, persona, tom, **cores** (`marca.cores.primaria` /
+  `acento` / `fundo`) e **logo** (`marca.logo`) — se `marca.json` não existir, **parar** e
+  orientar o aluno a criá-la ("me ajuda a montar minha marca" no chat) antes de continuar. Nunca
+  inventar uma marca.
+- **Garantir cor e logo ANTES de gerar** — a LP sai com a marca do aluno, não com a da ZX:
+  ```bash
+  python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca
+  ```
+  - **exit 1:** PERGUNTAR ao aluno a cor da marca (hex) e o nome, e gravar com
+    `python3 ~/.claude/skills/kit-lancador/marca.py set --nome "..." --acento "#HEX"`. Se ele não quiser informar a cor, rodar
+    `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar e imprime o aviso) e **repetir o aviso ao aluno**.
+    Nunca cair no âmbar sem avisar.
+  - **Logo:** se `python3 ~/.claude/skills/kit-lancador/marca.py check` mostra `"logo": "nao_perguntado"`, perguntar uma vez ("tem um logo
+    em png, jpg, svg ou webp? me passa o caminho ou um link https; se não tiver, uso só o nome").
+    Gravar com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Sem logo, a LP mostra só o nome em texto.
+  - O JSON do `resolve` traz `acento`, `texto_sobre_acento`, `primaria`, `fundo`, `logo.html_src`
+    e `avisos` — usar esses valores no Passo 3 (nada de cor escrita de cabeça).
 - **Blueprint** (Etapa 1) dá a oferta resolvida: preço principal, order bump, upsell, ICP, dor
   nº1, garantia, benefit stack já ancorado.
 - **Manifesto do mini-app** (Etapa 2, `~/kit-lancador-artefatos/miniapp/manifest.json`) dá o
@@ -125,17 +139,29 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
 - **Design tokens (fallback estrutural embutido — sem depender de nenhum arquivo externo):**
   ```css
   :root {
-    --cor-primaria: <marca.cores.primaria, senão #0B1220>;
-    --cor-acento:   <marca.cores.acento,   senão #D97706>;  /* CTA, preço, destaques */
-    --cor-fundo:    <marca.cores.fundo,    senão #FFFFFF>;
+    --cor-primaria: <resolve.primaria>;
+    --cor-acento:   <resolve.acento>;               /* COR DA MARCA: CTA, preço, destaques */
+    --cor-texto-no-acento: <resolve.texto_sobre_acento>;  /* texto de botão sobre a cor da marca */
+    --cor-fundo:    <resolve.fundo>;
     --fonte-titulo: 'Inter', system-ui, sans-serif;
     --fonte-corpo:  'Inter', system-ui, sans-serif;
     --fonte-mono:   'JetBrains Mono', ui-monospace, monospace; /* preços, countdown, badges */
   }
   ```
-  Se `marca.json` trouxer `cores`, usar SEMPRE a paleta do aluno (identidade white-label — nunca
-  reusar a cor de outro aluno). Se não trouxer, cair no fallback acima (âmbar `#D97706` + Inter +
-  JetBrains Mono) só pra não travar a etapa — e sinalizar ao aluno que pode personalizar depois.
+  Os valores vêm do `python3 ~/.claude/skills/kit-lancador/marca.py resolve` — SEMPRE a paleta do aluno (identidade white-label — nunca
+  reusar a cor de outro aluno). Todo uso de "cor da marca" (botão de CTA, preço, destaque, ícone,
+  selo) lê `var(--cor-acento)`; **nenhum hex da marca escrito direto** nas regras de CSS. Botão
+  de CTA: `background: var(--cor-acento); color: var(--cor-texto-no-acento)` — o helper já
+  escolhe texto escuro ou branco pelo contraste, então uma cor clara (ex.: amarelo) não fica
+  ilegível. A cor padrão ZX (âmbar) só aparece se o aluno recusou informar a cor — e nesse caso
+  o `resolve` traz o aviso em `avisos`, que você **repete ao aluno no resumo da etapa**.
+- **Logo e nome na LP:** no topo (header) e no rodapé, usar o logo do aluno quando houver:
+  `<img src="<resolve.logo.html_src>" alt="<nome da marca>" height="40">`. O `html_src` já vem
+  como `data:` URI (arquivo pequeno, a LP continua num arquivo só) ou como link https. Se
+  `logo.copiar_para_pasta` for `true`, copiar o arquivo `logo.src` para a pasta da LP e usar o
+  nome dele no `src`. Sem logo, escrever só o **nome da marca em texto** — nunca logo ou nome
+  "ZX LAB" no lugar. Usar o nome da marca também no `<title>`, no `og:site_name` e na identificação
+  do rodapé.
 - **Obrigatórios técnicos:**
   - **Meta Pixel**: `<script>` de inicialização + evento `InitiateCheckout`/`AddToCart` disparado
     no clique de cada CTA, com `<noscript>` fallback. Meta Pixel ID e GA ID são
@@ -165,6 +191,9 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
 - [ ] Os agentes/funcionalidades citados batem **exatamente** com `manifest.json` — nenhum a
       mais, nenhum a menos.
 - [ ] Preço principal e order bump batem com o blueprint (Etapa 1) — não hardcodar outro valor.
+- [ ] **Marca do aluno aplicada:** `grep -niE "d97706|zx ?lab" <lp>.html` não acha nada além do
+      aviso de cor padrão (se o aluno recusou a cor) — cor da marca só via `var(--cor-acento)`,
+      logo (ou nome em texto) no topo e no rodapé, contraste do botão legível.
 - [ ] Pixel (ou STUB comentado) + UTM tracker + sticky CTA + countdown honesto presentes.
 - [ ] Mobile: sem scroll horizontal, fonte ≥16px, alvo de toque ≥44px.
 - [ ] HTML bem formado (parse rápido com `python3 -c "import html.parser"` ou abrir no browser).

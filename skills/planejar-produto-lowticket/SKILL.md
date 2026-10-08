@@ -41,6 +41,43 @@ tem uma marca configurada — me diga o nome do seu produto/marca, o nicho, a pe
 final e o tom de voz que eu monto o `~/.operacao-ia/config/marca.json` com você." Só seguir depois
 que o arquivo existir (mesmo que mínimo).
 
+### Passo 1b — Identidade visual da marca (nome, cor, logo) — perguntar SEMPRE, nunca assumir
+
+A demo, a LP, o checkout e o material de divulgação saem com a **marca do aluno** — nunca com a
+da ZX LAB. Por isso, antes de seguir, conferir o que já existe:
+
+```bash
+python3 ~/.claude/skills/kit-lancador/marca.py check      # exit 0 = nome e cor da marca já existem; exit 1 lista o que falta
+```
+
+Perguntar o que faltar, **uma coisa por vez, em linguagem simples**:
+
+1. **Nome** da marca/produto (o que vai no topo da página e no rodapé).
+2. **Cor da marca** — "qual a cor principal da sua marca? É a cor dos botões e do preço. Pode
+   mandar em hex (ex.: `#1A73E8`) ou me dizer a cor e eu sugiro um hex." Aceita `#RGB` ou
+   `#RRGGBB`; qualquer outra coisa o helper rejeita e você pergunta de novo.
+3. **Cor de apoio** (opcional) — uma cor escura para títulos/rodapé. Se o aluno não tiver,
+   pular (o helper usa um azul-noite neutro).
+4. **Logo** (opcional) — "tem um arquivo de logo (png, jpg, svg ou webp)? Me passa o caminho do
+   arquivo no seu computador ou um link https." Se não tiver ou não quiser, a marca aparece só
+   com o nome em texto. **Nunca** colocar logo da ZX no lugar.
+
+Gravar com o helper (ele valida, normaliza o hex, copia o logo para `~/.operacao-ia/config/` e
+preserva os outros campos do `marca.json`):
+
+```bash
+python3 ~/.claude/skills/kit-lancador/marca.py set --nome "<nome>" --acento "#1A73E8" [--primaria "#0B1220"] [--fundo "#FFFFFF"] --logo "<caminho|https://...|nenhum>"
+```
+
+**Se o aluno não quiser informar a cor agora:** não inventar uma. Rodar
+`python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` — o helper grava o âmbar padrão **e imprime o aviso**
+("Usando a cor padrão ZX (âmbar). Troque depois em ~/.operacao-ia/config/marca.json"). Repetir esse
+aviso ao aluno com as próprias palavras, deixando claro que é só um valor provisório.
+
+Mapa dos campos: `marca` = nome · `cores.acento` = **cor da marca** (botões, preço, destaques) ·
+`cores.primaria` = cor de apoio · `cores.fundo` = fundo · `logo` = caminho do arquivo (copiado) ou
+URL https (`null` = o aluno disse que não quer logo).
+
 ## 🚨 Régua anti-reembolso — vale para toda a etapa
 
 Em produto low-ticket a métrica que importa **não é conversão bruta**, é **conversão × (1 −

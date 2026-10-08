@@ -36,8 +36,19 @@ cat "$(python3 ~/.claude/skills/kit-lancador/estado.py gate planejar | python3 -
 cat ~/kit-lancador-artefatos/miniapp/manifest.json                 # produto real: agentes, entidades, preço
 ```
 Se `marca.json` não existir, **parar** e orientar o aluno: *"Antes de divulgar, preciso da sua
-marca — me diga nome, nicho, persona, tom de voz, cores (hex) e o CTA principal, ou rode a Etapa 1
-se ainda não montou."* Nunca inventar marca nem seguir sem ela.
+marca — me diga nome, nicho, persona, tom de voz, cor da marca (hex), logo e o CTA principal, ou
+rode a Etapa 1 se ainda não montou."* Nunca inventar marca nem seguir sem ela.
+
+**Cor e logo antes de gerar qualquer peça visual (email em HTML e carrossel):**
+```bash
+python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca; imprime acento, texto_sobre_acento, logo e avisos
+```
+exit 1 → PERGUNTAR ao aluno a cor da marca (hex) e o nome e gravar com
+`python3 ~/.claude/skills/kit-lancador/marca.py set --nome "..." --acento "#HEX"`; se ele não quiser informar a cor, rodar
+`python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar **e imprime o aviso**) e repetir o aviso ao aluno.
+Logo ainda não perguntado (`python3 ~/.claude/skills/kit-lancador/marca.py check` → `"logo": "nao_perguntado"`): perguntar uma vez e gravar
+com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Sem logo, os materiais levam só o nome da marca em
+texto — nunca o logo ou o nome da ZX.
 
 Usar sempre o **preço e os agentes reais do manifesto** (nunca reaproveitar contagem/preço de
 outro produto ou de exemplo). Isso vale para os três artefatos abaixo.
@@ -66,8 +77,12 @@ mkdir -p ~/kit-lancador-artefatos/divulgar
 # ~/kit-lancador-artefatos/divulgar/email-lancamento.md    → revisão do aluno (texto puro)
 # ~/kit-lancador-artefatos/divulgar/email-lancamento.html  → HTML pronto pra disparo (Passo 5)
 ```
-O `.html` é um template simples e responsivo (largura ~600px, fontes do sistema, cores de
-`marca.json.cores`, botão de CTA sólido — sem gradiente/glow), com o texto do `.md` já formatado.
+O `.html` é um template simples e responsivo (largura ~600px, fontes do sistema, cores do
+`resolve`, botão de CTA sólido — sem gradiente/glow), com o texto do `.md` já formatado. Botão:
+fundo `resolve.acento` e texto `resolve.texto_sobre_acento` (contraste legível mesmo com cor
+clara). Topo do email: logo do aluno (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
+height="40">`; para email, preferir o link https quando o aluno tiver um, pois vários clientes de
+email bloqueiam imagem `data:`) ou, sem logo, o nome da marca em texto.
 
 ## Passo 3 — Copy de post social (legenda + hashtags + CTA)
 
@@ -114,7 +129,8 @@ Instagram de criadores/infoprodutos.
 ### 4.1 — Escrever a copy de cada slide ANTES de desenhar
 
 5 a 10 slides (default 7), máximo **50 palavras por slide**:
-- **Slide 1 (Capa)** — hook + nome da marca.
+- **Slide 1 (Capa)** — hook + nome da marca (o script já coloca logo ou nome no topo de todos
+  os slides; SVG não é lido pelo Pillow, então com logo em SVG o nome em texto é usado).
 - **Slide 2 (Problema)** — a dor nº1 do blueprint, em 1-2 frases que o leitor reconhece.
 - **Slides 3 a N-1 (Conteúdo)** — pontos numerados do benefit stack / como o mini-app resolve.
 - **Slide N (CTA)** — "Salvou? Manda pra quem precisa. Link nos comentários/bio" + `marca.cta`.
@@ -140,14 +156,44 @@ from PIL import Image, ImageDraw, ImageFont
 
 HOME = pathlib.Path.home()
 marca = json.loads((HOME / ".operacao-ia/config/marca.json").read_text())
-cores = marca.get("cores", {"primaria": "#111827", "acento": "#D97706", "fundo": "#0B1220"})
+cores = marca.get("cores") or {}
+NOME = (marca.get("marca") or "").strip()
+if not NOME or not cores.get("acento"):
+    raise SystemExit("Falta nome ou cor da marca em marca.json. Rode: python3 ~/.claude/skills/kit-lancador/marca.py set --nome ... --acento '#HEX' (ou --usar-padrao-zx)")
+if marca.get("cor_padrao_zx"):
+    print("AVISO: usando a cor padrão ZX (âmbar) porque a cor da marca não foi informada. "
+          "Troque em ~/.operacao-ia/config/marca.json (cores.acento).")
 
 def hx(h):
     h = h.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
     return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
-FUNDO, ACENTO, TEXTO = hx(cores.get("fundo", "#0B1220")), hx(cores.get("acento", "#D97706")), (245, 245, 245)
+# O carrossel é escuro: se o aluno não definiu fundo, usa um azul-noite neutro (o fundo claro
+# do cores.fundo da LP não serve aqui).
+FUNDO, ACENTO, TEXTO = hx(cores.get("fundo") or "#0B1220"), hx(cores["acento"]), (245, 245, 245)
 W, H = 1080, 1350
+
+def carregar_logo(altura=90):
+    """Logo do aluno (png/jpg/webp local ou https). SVG ou falha de leitura -> None (usa o nome em texto)."""
+    logo = marca.get("logo")
+    if not logo:
+        return None
+    try:
+        if str(logo).lower().startswith("https://"):
+            import io, urllib.request
+            with urllib.request.urlopen(logo, timeout=10) as r:
+                im = Image.open(io.BytesIO(r.read(2_000_000)))
+        else:
+            im = Image.open(pathlib.Path(logo).expanduser())
+        im = im.convert("RGBA")
+        return im.resize((max(1, int(im.width * altura / im.height)), altura))
+    except Exception as e:
+        print(f"AVISO: não consegui usar o logo ({e}); a marca aparece só com o nome em texto.")
+        return None
+
+LOGO = carregar_logo()
 
 def fonte(tamanho, negrito=False):
     candidatos = [
@@ -165,6 +211,10 @@ def slide(texto, idx, total, tipo, out_path):
     img = Image.new("RGB", (W, H), FUNDO)
     draw = ImageDraw.Draw(img)
     draw.rectangle([0, 0, W, 20], fill=ACENTO)  # barra de identidade da marca
+    if LOGO is not None:                         # logo do aluno no topo; sem logo, o nome em texto
+        img.paste(LOGO, (60, 50), LOGO)
+    else:
+        draw.text((60, 55), NOME, font=fonte(36, negrito=True), fill=TEXTO)
     tamanho = 66 if tipo == "capa" else 48
     f = fonte(tamanho, negrito=(tipo in ("capa", "cta")))
     linhas = textwrap.wrap(texto, width=22 if tipo == "capa" else 28)
@@ -202,7 +252,7 @@ conferir os PNGs no dir de saída.
 
 Se a instalação da lib falhar, gerar em vez dos PNGs um único
 `~/kit-lancador-artefatos/divulgar/carrossel/carrossel.html` com um `<div>` de 1080×1350px por
-slide (CSS inline, cores de `marca.json`, quebra de página entre eles) — o aluno abre no navegador
+slide (CSS inline, cores e logo (ou nome) do `resolve`, quebra de página entre eles) — o aluno abre no navegador
 e tira print de cada slide (ou imprime em PDF e recorta). Avisar que é o modo alternativo e por quê.
 
 ### 4.4 — Legenda do carrossel

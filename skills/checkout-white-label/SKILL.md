@@ -36,6 +36,17 @@ cat ~/kit-lancador-artefatos/miniapp/manifest.json 2>/dev/null   # se já existi
 
 - **Se `marca.json` não existir:** parar aqui e orientar o aluno a criá-la (não seguir com valor
   inventado).
+- **Garantir cor e logo ANTES de montar o preview** — o checkout é a página que o comprador vê
+  na hora de pagar e precisa ter a marca do aluno:
+  ```bash
+  python3 ~/.claude/skills/kit-lancador/marca.py resolve     # exit 1 = falta nome ou cor da marca
+  ```
+  **exit 1:** PERGUNTAR ao aluno a cor da marca (hex) e o nome e gravar com
+  `python3 ~/.claude/skills/kit-lancador/marca.py set --nome "..." --acento "#HEX"`; se ele não quiser informar a cor, rodar
+  `python3 ~/.claude/skills/kit-lancador/marca.py set --usar-padrao-zx` (grava o âmbar **e imprime o aviso**) e repetir o aviso ao aluno.
+  Logo ainda não perguntado (`python3 ~/.claude/skills/kit-lancador/marca.py check` → `"logo": "nao_perguntado"`): perguntar uma vez e
+  gravar com `python3 ~/.claude/skills/kit-lancador/marca.py set --logo "<caminho|https|nenhum>"`. Usar `acento`, `texto_sobre_acento`,
+  `primaria`, `fundo` e `logo.html_src` do JSON do `resolve`.
 - **Resolver o preço ANTES de montar o preview:**
   1. Localizar no blueprint a seção de **preço de entrada** e a seção **Order bump** — são texto
      livre tipo `"R$97 (pagamento único, acesso vitalício)"`; extrair o valor numérico (`97.00`)
@@ -88,17 +99,21 @@ checkout/
 
 **`checkout-preview.html`** — mobile-first, seções na ordem:
 1. **Barra de urgência** (timer visual — mensagem, não precisa contar de verdade no STUB).
-2. **Bloco do produto** — imagem (placeholder se não houver), nome, autor/marca, preço de/por
+2. **Bloco do produto** — imagem (placeholder se não houver), nome, autor/marca (logo do aluno
+   em `<img alt="<nome da marca>">` quando houver; sem logo, só o nome em texto), preço de/por
    vindo do Passo 1, a promessa (H1) do blueprint.
 3. **Dados do cliente** — nome, e-mail, CPF (máscara), telefone.
 4. **Abas de pagamento** — **Pix** (default) | **Cartão**.
 5. **Order bump** — checkbox com nome/descrição/preço do bump (Passo 1); ao marcar, soma ao
    total no resumo. É a "funcionalidade extra" do produto do aluno, não um segundo produto.
 6. **Resumo dinâmico** — recalcula ao vivo (JS no próprio HTML) conforme bump marcado/desmarcado.
-7. **Botão de finalizar** — cor sólida da marca do aluno (âmbar/o que estiver em `marca.json`),
-   **chapado, sem gradiente/glow/animação pulsante**.
+7. **Botão de finalizar** — cor sólida da marca do aluno (`var(--cor-acento)` definida no `:root`
+   a partir do `resolve.acento`, texto em `resolve.texto_sobre_acento` para manter o contraste),
+   **chapado, sem gradiente/glow/animação pulsante**. Nenhum hex da marca escrito direto no CSS.
 8. **Ícones de confiança** (SVG simples: pagamento seguro, dados protegidos, etc).
-9. **Rodapé** com identificação do vendedor.
+9. **Rodapé** com identificação do vendedor (nome da marca do aluno; logo quando houver).
+   Se o aluno recusou informar a cor e o `resolve` trouxe aviso de cor padrão ZX, repetir o
+   aviso ao aluno no resumo da etapa.
 
 No modo STUB, um banner fixo no topo diz **"MODO DEMONSTRAÇÃO"** e o botão de finalizar, ao
 clicar, mostra uma mensagem explicando que o checkout real entra na Entrega — **não simula uma

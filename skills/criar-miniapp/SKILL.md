@@ -125,9 +125,19 @@ RLS + painel Pages + Gemini como cérebro trocável):
   `prompt(entrada)` de sistema específico do nicho. **Replicar a ESTRUTURA do padrão, não copiar
   conteúdo de outro nicho.**
 - Gerar o `schema.ts`/migrations com as entidades do Passo 2.
-- Ler a marca do aluno (`~/.operacao-ia/config/marca.json`) e aplicar nome/cores/tipografia no
-  `painel/` e nos HTMLs de `docs/`, gravando os valores em `DESIGN-TOKENS.md`. Cada aluno traz a
-  **sua** paleta — nunca reusar a paleta de outro produto.
+- Ler a marca do aluno com `python3 ~/.claude/skills/kit-lancador/marca.py resolve` (exit 1 = falta nome ou cor: perguntar ao aluno e
+  gravar com `python3 ~/.claude/skills/kit-lancador/marca.py set`, ou `--usar-padrao-zx` que grava o âmbar **e imprime o aviso**, repetido
+  ao aluno) e aplicar nome/cores/logo/tipografia no `painel/` e nos HTMLs de `docs/`, gravando os
+  valores em `DESIGN-TOKENS.md`. Cada aluno traz a **sua** paleta — nunca reusar a paleta de
+  outro produto.
+  - **Cor da marca = CSS custom property** (`--brand` = `resolve.acento`, `--brand-2` =
+    `resolve.primaria`, `--on-brand` = `resolve.texto_sobre_acento`) definida no `:root` do
+    `painel/style.css` e das páginas de `docs/`; todo botão, destaque e preço lê `var(--brand)`.
+    Nenhum hex fixo da marca nas regras de CSS.
+  - **Logo:** `<img src="<resolve.logo.html_src>" alt="<nome da marca>">` no topo do painel e de
+    cada página de `docs/` (se `logo.copiar_para_pasta` for `true`, copiar o arquivo para a
+    pasta e usar o nome dele). Sem logo, o **nome da marca em texto**. Nunca "ZX LAB" no lugar
+    do nome do aluno nas telas que o cliente final vê.
 
 ## Passo 5 — Popular a demo e validar o "pronto" (DoD embutido)
 
@@ -139,6 +149,9 @@ protótipo de brinquedo):
       abrindo **sem credencial** (login fake + `data.mjs`).
 - [ ] `docs/apresentacao.html` e `docs/proposta.html` renderizam, com o **preço do blueprint**
       preenchido e **zero placeholder** `{{...}}` sobrando.
+- [ ] **Marca do aluno aplicada** no painel e em `docs/`: cor via `var(--brand)`, logo (ou nome em
+      texto) no topo, `grep -niE "d97706|zx ?lab" painel docs` sem sobra na tela do cliente final
+      (exceto o aviso de cor padrão, se o aluno recusou informar a cor).
 - [ ] `tests/` verdes (`npm test`) — incluindo os testes de invariante (auth fail-closed, RLS).
 - [ ] `npm run typecheck` e `npm run ci` (typecheck + test + `wrangler deploy --dry-run`) passam.
 

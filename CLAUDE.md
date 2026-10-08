@@ -25,8 +25,11 @@ te levo.
    (Isso instala 8 skills: o orquestrador `kit-lancador` + as 7 etapas.)
 
 2. **Crie a sua marca.** As skills leem a sua identidade de marca de
-   `~/.operacao-ia/config/marca.json` (nome, nicho, persona, cores, CTA). Se você ainda não tem
-   esse arquivo, é só me dizer **"me ajuda a montar minha marca"** que eu monto com você.
+   `~/.operacao-ia/config/marca.json` (nome, nicho, persona, **cor da marca, logo**, CTA). Se você
+   ainda não tem esse arquivo, é só me dizer **"me ajuda a montar minha marca"** que eu monto com
+   você. A landing page, o checkout, o mini-app e os materiais de divulgação saem com a **sua**
+   cor e o **seu** logo (sem logo, com o seu nome em texto) — eu te pergunto antes de gerar. Se
+   preferir não informar a cor, uso a cor padrão da ZX e te aviso, pra você trocar depois.
 
    > 🔒 **Segurança:** suas credenciais (conta Pagar.me, domínio, Pixel, chaves de API) vivem
    > **só em arquivos de ambiente locais** na sua máquina (`~/.operacao-ia/config/*.env`) — elas
