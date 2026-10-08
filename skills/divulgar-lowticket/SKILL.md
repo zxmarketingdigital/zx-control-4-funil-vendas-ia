@@ -80,7 +80,7 @@ mkdir -p ~/kit-lancador-artefatos/divulgar
 O `.html` é um template simples e responsivo (largura ~600px, fontes do sistema, cores do
 `resolve`, botão de CTA sólido — sem gradiente/glow), com o texto do `.md` já formatado. Botão:
 fundo `resolve.acento` e texto `resolve.texto_sobre_acento` (contraste legível mesmo com cor
-clara). Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
+clara). **Todo valor dinâmico (nome da marca, nome do destinatário, assunto, links) entra no HTML escapado** (`html.escape(valor, quote=True)`; `&`, `<`, `>`, aspas viram entidades) — nunca interpolar texto cru em atributo ou corpo. Topo do email: logo do aluno só se for **link https** (`<img src="<resolve.logo.html_src>" alt="<nome da marca>"
 height="40">`); logo local não funciona em email (clientes bloqueiam imagem `data:` e arquivo local) — nesse
 caso usar o nome da marca em texto e avisar o aluno que, para ter o logo no email, ele precisa hospedá-lo
 e gravar o link com `marca.py set --logo https://...`. Sem logo, o nome da marca em texto.
@@ -186,7 +186,8 @@ def _contraste(a, b):
     return (max(x, y) + 0.05) / (min(x, y) + 0.05)
 
 # Texto do carrossel: claro ou escuro, o que tiver >= 4,5:1 sobre o fundo (nunca texto ilegível).
-TEXTO = max([(245, 245, 245), (17, 24, 39)], key=lambda c: _contraste(c, FUNDO))
+# Candidatos em ordem de preferência; entra o primeiro com >= 4,5:1 (preto e branco puros sempre chegam a 4,58:1 em algum lado).
+TEXTO = next((c for c in [(245, 245, 245), (17, 24, 39), (255, 255, 255), (0, 0, 0)] if _contraste(c, FUNDO) >= 4.5), (0, 0, 0))
 # Cor de destaque (CTA e contador de slides): a cor da marca só se ler bem (>= 4,5:1) sobre o fundo;
 # senão usa o TEXTO — a identidade da marca fica na barra do topo e no logo.
 DESTAQUE = ACENTO if _contraste(ACENTO, FUNDO) >= 4.5 else TEXTO
@@ -302,8 +303,8 @@ seguro:
    ═══════════════════════════════════════
    Assunto:     {assunto escolhido}
    Destinatários: N (após dedup)
-   Preview (5 primeiros): nome@email.com, ...
-   Preview do corpo (200 chars): "Oi {{nome}}, ..."
+   Preview (5 primeiros, mascarados): n***@e***.com, ...
+   Preview do corpo (200 chars): "Oi {{nome}}, ..." (com nome de exemplo, nunca o de um contato real)
    Nenhum email/WhatsApp foi enviado.
    ═══════════════════════════════════════
    ```

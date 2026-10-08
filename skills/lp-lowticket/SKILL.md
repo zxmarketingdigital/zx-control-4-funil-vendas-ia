@@ -165,7 +165,7 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
   - **Meta Pixel**: `<script>` de inicialização + evento `InitiateCheckout`/`AddToCart` disparado
     no clique de cada CTA, com `<noscript>` fallback. Meta Pixel ID e GA ID são
     **identificadores client-side públicos**: se o aluno informar, inserir direto no HTML, por
-    exemplo `fbq('init','<PIXEL_ID>')`, como em qualquer LP de produção. Se ele ainda não tiver
+    exemplo `fbq('init','<PIXEL_ID>')`, como em qualquer LP de produção. **Só aceitar Pixel ID composto de 8 a 20 dígitos (`^[0-9]{8,20}$`)** e GA ID no formato `G-XXXXXXXXXX`; qualquer outra coisa (aspas, parênteses, ponto e vírgula) é recusada e o aluno é perguntado de novo — nunca inserir texto livre dentro de um `<script>`. Se ele ainda não tiver
     Pixel ID, **não travar**: gerar em modo STUB com o placeholder comentado (`<!-- PIXEL_ID: cole
     aqui quando tiver -->`) e seguir.
   - **UTM/SCK tracker**: script pequeno que lê UTM da URL de entrada e propaga como parâmetro
@@ -191,11 +191,12 @@ Valor total: R$N   •   Hoje: R$[preco_principal do blueprint]
       mais, nenhum a menos.
 - [ ] Preço principal e order bump batem com o blueprint (Etapa 1) — não hardcodar outro valor.
 - [ ] **Marca do aluno aplicada:** `grep -niE "d97706|zx ?lab" <lp>.html` não acha nada além do
-      aviso de cor padrão (se o aluno recusou a cor) — cor da marca só via `var(--cor-acento)`,
+      valor `#D97706` nas variáveis CSS quando o aluno recusou a cor (o aviso de cor padrão foi dado no terminal) e de
+      qualquer menção a "ZX LAB" (essa nunca pode aparecer) — cor da marca só via `var(--cor-acento)`,
       logo (ou nome em texto) no topo e no rodapé, contraste do botão legível.
 - [ ] Pixel (ou STUB comentado) + UTM tracker + sticky CTA + countdown honesto presentes.
 - [ ] Mobile: sem scroll horizontal, fonte ≥16px, alvo de toque ≥44px.
-- [ ] HTML bem formado (parse rápido com `python3 -c "import html.parser"` ou abrir no browser).
+- [ ] HTML bem formado (parse real: `python3 -c "import sys,html.parser as h; p=h.HTMLParser(); p.feed(open(sys.argv[1],encoding='utf-8').read()); p.close()" <lp>.html` roda sem erro, e abrir no browser).
 - [ ] Abrir localmente (`python3 -m http.server` na pasta) e conferir visualmente hero + sticky
       CTA + FAQ — "pronto" é **visto renderizando**, não "arquivo criado".
 

@@ -186,6 +186,38 @@ class MarcaTest(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual((self.cfg / "marca.json").read_text(), "{quebrado")
 
+    def test_logo_origem_symlink_recusado(self):
+        real = Path(self.tmp.name) / "real.png"
+        real.write_bytes(PNG_1x1)
+        link = Path(self.tmp.name) / "link.png"
+        link.symlink_to(real)
+        self.assertNotEqual(self.run_marca("set", "--nome", "X", "--logo", str(link)).returncode, 0)
+        self.assertEqual(list(self.cfg.glob("marca-logo-*")), [])
+
+    def test_data_uri_respeita_limite_depois_do_base64(self):
+        g = Path(self.tmp.name) / "g.png"
+        g.write_bytes(PNG_1x1 + b"\0" * (250 * 1024))   # 250 KB crus viram ~333 KB em base64
+        self.run_marca("set", "--nome", "X", "--acento", "#0055AA", "--logo", str(g))
+        info = json.loads(self.run_marca("resolve").stdout)["logo"]
+        self.assertEqual(info["tipo"], "arquivo")
+        self.assertIsNone(info["data_uri"])
+
+    def test_sets_concorrentes_deixam_logo_existente(self):
+        import subprocess
+        arqs = []
+        for i in range(6):
+            f = Path(self.tmp.name) / f"c{i}.png"
+            f.write_bytes(PNG_1x1 + bytes([i]))
+            arqs.append(f)
+        env = dict(os.environ, OPERACAO_IA_CONFIG_DIR=str(self.cfg))
+        procs = [subprocess.Popen([sys.executable, str(MARCA), "set", "--nome", "X", "--acento", "#0055AA", "--logo", str(f)],
+                                  env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for f in arqs]
+        for pr in procs:
+            self.assertEqual(pr.wait(), 0)
+        logo = self.marca_json()["logo"]
+        self.assertTrue(Path(logo).is_file())
+        self.assertEqual(len(list(self.cfg.glob("marca-logo-*"))), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

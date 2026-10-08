@@ -32,6 +32,7 @@ CLI:
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import json
 import mimetypes
@@ -46,7 +47,7 @@ PRIMARIA_FALLBACK = "#0B1220"
 FUNDO_FALLBACK = "#FFFFFF"
 TEXTO_ESCURO = "#111827"
 TEXTO_CLARO = "#FFFFFF"
-LOGO_EXTS = {".png", ".jpg", ".jpeg", ".svg", ".webp"}
+LOGO_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
 LOGO_MAX_BYTES = 2 * 1024 * 1024     # recusa logo gigante
 LOGO_DATA_URI_MAX = 300 * 1024       # acima disso não vira data URI (copiar ao lado do HTML)
 
@@ -131,6 +132,8 @@ def _copiar_logo(origem: str) -> str:
     if origem.lower().startswith("http://"):
         raise SystemExit("ERRO: URL de logo precisa ser https://. Use https ou um arquivo local.")
     src = Path(origem).expanduser()
+    if src.is_symlink():
+        raise SystemExit(f"ERRO: {src} é um link simbólico; informe o arquivo de imagem real.")
     if not src.is_file():
         raise SystemExit(f"ERRO: arquivo de logo não encontrado: {src}")
     ext = src.suffix.lower()
@@ -198,7 +201,47 @@ def cmd_check(_args: list[str]) -> int:
     return 1 if falta else 0
 
 
+@contextlib.contextmanager
+def _trava_config():
+    """Serializa execuções de `set` (cópia + gravação + limpeza). Sem suporte a lock no sistema, segue sem travar."""
+    config_dir().mkdir(parents=True, exist_ok=True)
+    f = open(config_dir() / ".marca.lock", "a+")
+    travado = False
+    try:
+        try:
+            import fcntl
+            fcntl.flock(f, fcntl.LOCK_EX)
+            travado = True
+        except ImportError:
+            try:
+                import msvcrt
+                f.seek(0)
+                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+                travado = True
+            except (ImportError, OSError):
+                pass
+        yield
+    finally:
+        if travado:
+            try:
+                import fcntl
+                fcntl.flock(f, fcntl.LOCK_UN)
+            except ImportError:
+                try:
+                    import msvcrt
+                    f.seek(0)
+                    msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+                except (ImportError, OSError):
+                    pass
+        f.close()
+
+
 def cmd_set(args: list[str]) -> int:
+    with _trava_config():
+        return _cmd_set(args)
+
+
+def _cmd_set(args: list[str]) -> int:
     m = ler_marca()
     cores = dict(m.get("cores") or {})
     i = 0
@@ -257,7 +300,7 @@ def _logo_info(m: dict) -> dict:
         dentro = False
     if p.suffix.lower() not in LOGO_EXTS or p.is_symlink() or not dentro:
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
-                "aviso": f"logo ignorado (precisa ser imagem png/jpg/svg/webp dentro de {config_dir()}): {p}. "
+                "aviso": f"logo ignorado (precisa ser imagem png/jpg/gif/svg/webp dentro de {config_dir()}): {p}. "
                          "Rode marca.py set --logo <arquivo> para copiá-lo."}
     if not p.is_file():
         return {"tipo": None, "src": None, "html_src": None, "copiar_para_pasta": False,
@@ -266,7 +309,9 @@ def _logo_info(m: dict) -> dict:
     info = {"tipo": "arquivo", "src": str(p), "html_src": p.name, "copiar_para_pasta": True, "data_uri": None}
     if tam <= LOGO_DATA_URI_MAX:   # alternativa p/ HTML de arquivo único; as etapas preferem copiar o arquivo
         mime = mimetypes.guess_type(p.name)[0] or "application/octet-stream"
-        info["data_uri"] = f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode('ascii')}"
+        uri = f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode('ascii')}"
+        if len(uri) <= LOGO_DATA_URI_MAX:   # o limite vale para o tamanho já codificado
+            info["data_uri"] = uri
     return info
 
 
