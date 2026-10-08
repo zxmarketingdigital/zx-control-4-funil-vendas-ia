@@ -60,7 +60,7 @@ python3 ~/.claude/skills/kit-lancador/estado.py status
 
 - Se `marca.json` não existe → avisar: *"Antes de começar, preciso da sua marca em
   `~/.operacao-ia/config/marca.json` (nome, nicho, cor da marca, logo, CTA). Quer que eu ajude a
-  montar?"* e **não avançar** sem isso (as skills de LP/copy/carrossel leem essa marca). A
+  montar?"* e **não avançar para as etapas 2 em diante** sem isso (as skills de LP/copy/carrossel leem essa marca); a **Etapa 1 roda mesmo sem marca.json**, porque é nela que a marca é criada. A
   entrevista de nome, cor e logo mora na Etapa 1 (Passo 1b) e usa o helper
   `python3 ~/.claude/skills/kit-lancador/marca.py` (`check` / `set` / `resolve`).
 - Se `marca.json` existe mas `python3 ~/.claude/skills/kit-lancador/marca.py check` devolve exit 1 (falta nome ou cor da marca) → mesma
