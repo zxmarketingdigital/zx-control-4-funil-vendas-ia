@@ -85,12 +85,17 @@ def _contraste(l1: float, l2: float) -> float:
     return (a + 0.05) / (b + 0.05)
 
 
+MIN_CONTRASTE = 4.5   # WCAG AA para texto normal
+
+
 def texto_sobre(hex6: str) -> str:
-    """Cor de texto (escuro ou branco) com MAIOR contraste sobre a cor dada (botão da marca)."""
+    """Cor de texto sobre a cor da marca com contraste >= 4,5:1: escuro, senão branco, senão preto puro.
+    (Preto ou branco sempre chegam a >= 4,58:1, então o resultado nunca fica abaixo do mínimo.)"""
     lum = _luminancia(hex6)
-    c_escuro = _contraste(lum, _luminancia(TEXTO_ESCURO))
-    c_claro = _contraste(lum, _luminancia(TEXTO_CLARO))
-    return TEXTO_ESCURO if c_escuro > c_claro else TEXTO_CLARO
+    for cand in (TEXTO_ESCURO, TEXTO_CLARO, "#000000"):
+        if _contraste(lum, _luminancia(cand)) >= MIN_CONTRASTE:
+            return cand
+    return "#000000"
 
 
 # ───────────────────────── arquivo ─────────────────────────
@@ -132,12 +137,24 @@ def _copiar_logo(origem: str) -> str:
         raise SystemExit("ERRO: logo maior que 2 MB. Use uma versão menor.")
     destino = config_dir() / f"marca-logo{ext}"
     destino.parent.mkdir(parents=True, exist_ok=True)
-    # remove logos antigos de outra extensão para não sobrar lixo
-    for velho in config_dir().glob("marca-logo.*"):
-        if velho != destino:
-            velho.unlink()
+    if destino.is_symlink():
+        raise SystemExit(f"ERRO: {destino} é um link simbólico; remova-o e tente de novo.")
     if src.resolve() != destino.resolve():
-        shutil.copyfile(src, destino)
+        # copia para temporário e troca atômica: se a cópia falhar, o logo antigo continua intacto
+        tmp = destino.with_name(destino.name + ".tmp")
+        if tmp.is_symlink() or tmp.exists():
+            tmp.unlink()
+        try:
+            shutil.copyfile(src, tmp)
+            os.replace(tmp, destino)
+        except OSError as e:
+            if tmp.exists() or tmp.is_symlink():
+                tmp.unlink()
+            raise SystemExit(f"ERRO: não consegui copiar o logo ({e}). O logo anterior foi mantido.")
+    # só agora, com a cópia nova no lugar, remove logos antigos de outra extensão
+    for velho in config_dir().glob("marca-logo.*"):
+        if velho != destino and not velho.name.endswith(".tmp"):
+            velho.unlink()
     return str(destino)
 
 

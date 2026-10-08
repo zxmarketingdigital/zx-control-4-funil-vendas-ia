@@ -76,6 +76,8 @@ class MarcaTest(unittest.TestCase):
         self.assertEqual(self.run_marca("texto-sobre", "#FFEB3B").stdout.strip(), "#111827")  # amarelo claro
         self.assertEqual(self.run_marca("texto-sobre", "#0B1220").stdout.strip(), "#FFFFFF")  # azul escuro
         self.assertEqual(self.run_marca("texto-sobre", "#D97706").stdout.strip(), "#111827")  # âmbar
+        # cinza médio: nem o escuro nem o branco chegam a 4,5:1 -> preto puro
+        self.assertEqual(self.run_marca("texto-sobre", "#777777").stdout.strip(), "#000000")
 
     def test_logo_local_copiado_e_vira_data_uri(self):
         png = Path(self.tmp.name) / "meu logo.png"
@@ -101,6 +103,34 @@ class MarcaTest(unittest.TestCase):
         self.assertIsNone(self.marca_json()["logo"])
         self.assertEqual(json.loads(self.run_marca("check").stdout)["logo"], "perguntado")
         self.assertIsNone(json.loads(self.run_marca("resolve").stdout)["logo"]["tipo"])
+
+    def test_logo_destino_symlink_recusado(self):
+        self.cfg.mkdir(parents=True)
+        alvo = Path(self.tmp.name) / "alvo.png"
+        alvo.write_bytes(PNG_1x1)
+        (self.cfg / "marca-logo.png").symlink_to(alvo)
+        novo = Path(self.tmp.name) / "novo.png"
+        novo.write_bytes(PNG_1x1 + b"x")
+        r = self.run_marca("set", "--nome", "X", "--logo", str(novo))
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(alvo.read_bytes(), PNG_1x1)  # alvo do link não foi sobrescrito
+
+    def test_troca_de_logo_mantem_antigo_se_copia_falha_e_remove_outra_extensao_se_ok(self):
+        a = Path(self.tmp.name) / "a.png"
+        a.write_bytes(PNG_1x1)
+        self.run_marca("set", "--nome", "X", "--logo", str(a))
+        # origem inválida (extensão): falha antes de mexer em qualquer coisa
+        txt = Path(self.tmp.name) / "b.txt"
+        txt.write_text("x")
+        self.assertNotEqual(self.run_marca("set", "--logo", str(txt)).returncode, 0)
+        self.assertTrue((self.cfg / "marca-logo.png").is_file())
+        # troca por jpg: png antigo some só depois da cópia nova
+        j = Path(self.tmp.name) / "c.jpg"
+        j.write_bytes(b"\xff\xd8\xff")
+        self.assertEqual(self.run_marca("set", "--logo", str(j)).returncode, 0)
+        self.assertTrue((self.cfg / "marca-logo.jpg").is_file())
+        self.assertFalse((self.cfg / "marca-logo.png").exists())
+        self.assertEqual(list(self.cfg.glob("*.tmp")), [])
 
     def test_json_corrompido_nao_e_sobrescrito(self):
         self.cfg.mkdir(parents=True)
